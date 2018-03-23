@@ -72,7 +72,7 @@ Material:
     - _LM: 0
     - _LMPower: 0
     - _MainTexturePower: 1
-    - _Metallic: 0.5
+    - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
@@ -84,7 +84,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _AmbientColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.7941176, g: 0.7941176, b: 0.7941176, a: 1}
     - _Color_B: {r: 1, g: 1, b: 1, a: 1}
     - _Color_D: {r: 1, g: 0, b: 0, a: 1}
     - _Color_F: {r: 1, g: 1, b: 0, a: 1}
