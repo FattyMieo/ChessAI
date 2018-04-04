@@ -54,10 +54,21 @@ public class ChessBoardSnapshotEditor : Editor
                 }
 
                 GUIStyle gs = GUI.skin.button;
-                gs.fontSize = 40;
+                gs.fontSize = 30;
                 if (GUILayout.Button(board.GetArrayElementAtIndex(i).enumValueIndex.ToChessPieceIcon().ToString(), gs, GUILayout.Width(40), GUILayout.Height(40)))
                 {
-                    if (board.GetArrayElementAtIndex(i).enumValueIndex >= 1 && board.GetArrayElementAtIndex(i).enumValueIndex <= 6)
+					if(board.GetArrayElementAtIndex(i).enumValueIndex == 0)
+					{
+						if (isWhite)
+						{
+							board.GetArrayElementAtIndex(i).enumValueIndex = 1;
+						}
+						else
+						{
+							board.GetArrayElementAtIndex(i).enumValueIndex = 7;
+						}
+					}
+                    else if (board.GetArrayElementAtIndex(i).enumValueIndex >= 1 && board.GetArrayElementAtIndex(i).enumValueIndex <= 6)
                     {
                         if (isWhite)
                         {
@@ -82,10 +93,6 @@ public class ChessBoardSnapshotEditor : Editor
                             if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.Total)
                             {
                                 board.GetArrayElementAtIndex(i).enumValueIndex = 0;
-                            }
-                            else if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.WhitePawn)
-                            {
-                                board.GetArrayElementAtIndex(i).enumValueIndex = 7;
                             }
                         }
                         else
