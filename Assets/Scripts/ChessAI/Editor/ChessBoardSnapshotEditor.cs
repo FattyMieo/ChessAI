@@ -8,123 +8,133 @@ using Chess;
 public class ChessBoardSnapshotEditor : Editor
 {
 	SerializedProperty board;
-    bool showBoard = false;
+    bool showBoard = true;
     bool isWhite = true;
+
+	Color defaulBColor = Color.white;
+	Color invertedColor = Color.gray;
 
     public override void OnInspectorGUI()
     {
-        Color defaulBColor = GUI.color;
-        Color invertedColor = defaulBColor * 0.5f;
-        invertedColor.a = 1.0f;
+		serializedObject.Update();
 
-        serializedObject.Update();
+		board = serializedObject.FindProperty("board");
+		board.arraySize = ChessSettings.boardSize * ChessSettings.boardSize;
 
-        board = serializedObject.FindProperty("board");
-        board.arraySize = ChessSettings.boardSize * ChessSettings.boardSize;
-
-        EditorGUILayout.BeginHorizontal();
-        showBoard = EditorGUILayout.Toggle(showBoard, GUILayout.Width(20));
-        EditorGUILayout.LabelField("Show Board Visualization");
-        EditorGUILayout.EndHorizontal();
-
-        if (showBoard)
+		if (ShowBoardVisualization())
         {
-            if (isWhite)
-                GUI.color = defaulBColor;
-            else
-                GUI.color = invertedColor;
-
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("", GUILayout.Width(13), GUILayout.Height(13)))
-                isWhite = !isWhite;
-
-            GUI.color = defaulBColor;
-
-            GUILayout.Space(7.5f);
-            EditorGUILayout.LabelField("Piece Color");
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUI.indentLevel++;
-
-            for (int i = 0; i < board.arraySize;)
-			{
-                if(i % ChessSettings.boardSize == 0)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                }
-
-                GUIStyle gs = GUI.skin.button;
-                gs.fontSize = 30;
-                if (GUILayout.Button(board.GetArrayElementAtIndex(i).enumValueIndex.ToChessPieceIcon().ToString(), gs, GUILayout.Width(40), GUILayout.Height(40)))
-                {
-					if(board.GetArrayElementAtIndex(i).enumValueIndex == 0)
-					{
-						if (isWhite)
-						{
-							board.GetArrayElementAtIndex(i).enumValueIndex = 1;
-						}
-						else
-						{
-							board.GetArrayElementAtIndex(i).enumValueIndex = 7;
-						}
-					}
-                    else if (board.GetArrayElementAtIndex(i).enumValueIndex >= 1 && board.GetArrayElementAtIndex(i).enumValueIndex <= 6)
-                    {
-                        if (isWhite)
-                        {
-                            board.GetArrayElementAtIndex(i).enumValueIndex++;
-
-                            if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.BlackPawn)
-                            {
-                                board.GetArrayElementAtIndex(i).enumValueIndex = 0;
-                            }
-                        }
-                        else
-                        {
-                            board.GetArrayElementAtIndex(i).enumValueIndex += 6;
-                        }
-                    }
-                    else if (board.GetArrayElementAtIndex(i).enumValueIndex >= 7 && board.GetArrayElementAtIndex(i).enumValueIndex <= 12)
-                    {
-                        if(!isWhite)
-                        {
-                            board.GetArrayElementAtIndex(i).enumValueIndex++;
-
-                            if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.Total)
-                            {
-                                board.GetArrayElementAtIndex(i).enumValueIndex = 0;
-                            }
-                        }
-                        else
-                        {
-                            board.GetArrayElementAtIndex(i).enumValueIndex -= 6;
-                        }
-                    }
-
-                    //board.GetArrayElementAtIndex(i).enumValueIndex++;
-
-                    if(board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.Total)
-                    {
-                        board.GetArrayElementAtIndex(i).enumValueIndex = 0;
-                    }
-                }
-
-                i++;
-                
-                if (i % ChessSettings.boardSize == 0)
-                {
-                    GUILayout.FlexibleSpace();
-                    EditorGUILayout.EndHorizontal();
-                }
-            }
-            
-            EditorGUILayout.Space();
-
-            EditorGUI.indentLevel--;
+			TogglePieceColor();
+			DrawBoard();
         }
 
         serializedObject.ApplyModifiedProperties();
 
         DrawDefaultInspector();
     }
+
+	bool ShowBoardVisualization()
+	{
+		EditorGUILayout.BeginHorizontal();
+		showBoard = EditorGUILayout.Toggle(showBoard, GUILayout.Width(20));
+		EditorGUILayout.LabelField("Show Board Visualization");
+		EditorGUILayout.EndHorizontal();
+
+		return showBoard;
+	}
+
+	void TogglePieceColor()
+	{
+		if (isWhite)
+			GUI.color = defaulBColor;
+		else
+			GUI.color = invertedColor;
+
+		EditorGUILayout.BeginHorizontal();
+		if (GUILayout.Button("", GUILayout.Width(13), GUILayout.Height(13)))
+			isWhite = !isWhite;
+
+		GUI.color = defaulBColor;
+
+		GUILayout.Space(7.5f);
+		EditorGUILayout.LabelField("Toggle Piece Color");
+		EditorGUILayout.EndHorizontal();
+	}
+
+	void DrawBoard()
+	{
+		EditorGUI.indentLevel++;
+
+		for (int i = 0; i < board.arraySize;)
+		{
+			if(i % ChessSettings.boardSize == 0)
+			{
+				EditorGUILayout.BeginHorizontal();
+			}
+
+			// Button
+			GUIStyle gs = GUI.skin.button;
+			gs.fontSize = 30;
+			if(GUILayout.Button
+			(
+				board.GetArrayElementAtIndex(i).enumValueIndex
+											   .ToChessPieceIcon()
+											   .ToString(),
+				gs,
+				GUILayout.Width(40), GUILayout.Height(40)
+			))
+			{
+				DoConversion(i);
+			}
+
+			i++;
+
+			if (i % ChessSettings.boardSize == 0)
+			{
+				GUILayout.FlexibleSpace();
+				EditorGUILayout.EndHorizontal();
+			}
+		}
+
+		EditorGUILayout.Space();
+		EditorGUI.indentLevel--;
+	}
+
+	void DoConversion(int i)
+	{
+		if(board.GetArrayElementAtIndex(i).enumValueIndex == 0)
+		{
+			if (isWhite)
+				board.GetArrayElementAtIndex(i).enumValueIndex = 1;
+			else
+				board.GetArrayElementAtIndex(i).enumValueIndex = 7;
+		}
+		else if (board.GetArrayElementAtIndex(i).enumValueIndex >= 1 && board.GetArrayElementAtIndex(i).enumValueIndex <= 6)
+		{
+			if (isWhite)
+			{
+				board.GetArrayElementAtIndex(i).enumValueIndex++;
+
+				if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.BlackPawn)
+					board.GetArrayElementAtIndex(i).enumValueIndex = 0;
+			}
+			else
+				board.GetArrayElementAtIndex(i).enumValueIndex += 6;
+		}
+		else if (board.GetArrayElementAtIndex(i).enumValueIndex >= 7 && board.GetArrayElementAtIndex(i).enumValueIndex <= 12)
+		{
+			if(!isWhite)
+			{
+				board.GetArrayElementAtIndex(i).enumValueIndex++;
+
+				if (board.GetArrayElementAtIndex(i).enumValueIndex >= (int)ChessPieceType.Total)
+					board.GetArrayElementAtIndex(i).enumValueIndex = 0;
+			}
+			else
+				board.GetArrayElementAtIndex(i).enumValueIndex -= 6;
+		}
+		else
+		{
+			board.GetArrayElementAtIndex(i).enumValueIndex = 0;
+		}
+	}
 }

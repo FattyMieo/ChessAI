@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72e1514684d45bf42ab65fc079371a2c, type: 3}
-  m_Name: Bishop
+  m_Name: BlackRook
   m_EditorClassIdentifier: 
   type: 0
   score: 0
