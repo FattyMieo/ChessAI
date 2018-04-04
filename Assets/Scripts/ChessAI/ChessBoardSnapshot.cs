@@ -4,8 +4,9 @@ using Chess;
 
 namespace Chess
 {
-	public class ChessBoardSnapshot : ScriptableObject
+    [CreateAssetMenu(fileName = "Board", menuName = "ChessAI/Board", order = 1)]
+    public class ChessBoardSnapshot : ScriptableObject
 	{
-		public ChessPieceType[] board = new ChessPieceType[ChessSettings.boardSize];
+		public ChessPieceType[] board = new ChessPieceType[ChessSettings.boardSize * ChessSettings.boardSize];
 	}
 }
