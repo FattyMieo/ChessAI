@@ -51,3 +51,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93de51a769bbe614fb4f287f010661b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings:
+    pieceProfiles:
+    - {fileID: 11400000, guid: 2ea18fc2365a3e8449d9441e7b397946, type: 2}
+    - {fileID: 11400000, guid: 3d5d61cdb8ad4e942a46e53d7eb5914e, type: 2}
+    - {fileID: 11400000, guid: dec970bf1c4b4f94987f816a40162a2f, type: 2}
+    - {fileID: 11400000, guid: 7150cafb9aaa1a04289a9c042fe19dae, type: 2}
+    - {fileID: 11400000, guid: b24e1eff7d3ac9d4eb978b0f1bd7a97b, type: 2}
+    - {fileID: 11400000, guid: ae5b01344b908fd418783b6fd78c1333, type: 2}
+    - {fileID: 11400000, guid: 43ca191fafbd81244b495171a4648d71, type: 2}
+    - {fileID: 11400000, guid: 3476bfef235b93743a5435772483d6b6, type: 2}
+    - {fileID: 11400000, guid: 2567ae1e389120d4eb14708a2cc251f6, type: 2}
+    - {fileID: 11400000, guid: 7150cafb9aaa1a04289a9c042fe19dae, type: 2}
+    - {fileID: 11400000, guid: a9b3e5067b367ec498b0ee1b7917b382, type: 2}
+    - {fileID: 11400000, guid: 17d64f5820e0be4428b1180a032e32f4, type: 2}
+    - {fileID: 11400000, guid: a13312b429461104c89339d4cb7d28ff, type: 2}
+  pieceMeshes:
+  - {fileID: 1061284805119028, guid: 8eb0b21e051f54d40808b24ade2a3c47, type: 2}
+  - {fileID: 1800653273550768, guid: 0597eb91b3721a04e9bf287b88fe9177, type: 2}
+  - {fileID: 1458993840678566, guid: ae3f42b4d86d8d34e96a60eb555f4866, type: 2}
+  - {fileID: 1356897913882008, guid: f2531c598544ee6449ee78489c951c12, type: 2}
+  - {fileID: 1407749727774522, guid: 4ef3dc67deae13841aa0c7793222c5fd, type: 2}
+  - {fileID: 1596105261184166, guid: 00b23ced465ed184089ff43ae9c1eaa1, type: 2}
+  pieceMat:
+  - {fileID: 2100000, guid: 75c556b4c38a787448e67840050c8d14, type: 2}
+  - {fileID: 2100000, guid: e01854b2402e7a143a40d024089d3772, type: 2}
+  piecePrefab: {fileID: 1061284805119028, guid: efa8e40e2c991794dbe8c7b965e0a614,
+    type: 2}
+  pieces: []
+  snapshots: []
