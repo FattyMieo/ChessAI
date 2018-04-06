@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Script that change material on the mesh prefab
+/// </summary>
 [ExecuteInEditMode]
 public class MaterialPainter : MonoBehaviour
 {

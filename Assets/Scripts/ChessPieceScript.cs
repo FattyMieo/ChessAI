@@ -3,34 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 using Chess;
 
+/// <summary>
+/// Script for chess piece prefab
+/// Can be found in Prefabs/Pieces/Piece.prefab
+/// </summary>
 public class ChessPieceScript : MonoBehaviour
 {
     private GameObject mesh;
-    private ChessPieceType _type;
+    public ChessPosition position;
     public ChessPieceType type
     {
-        get { return _type; }
+        get { return position.type; }
         set
         {
-            _type = value;
-            gameObject.name = _type.ToString();
+            position.type = value;
+            gameObject.name = position.type.ToString();
             UpdateMesh();
         }
     }
-    private ChessCoordinate _coord;
 	public ChessCoordinate coord
     {
-        get { return _coord; }
+        get { return position.coord; }
         set
         {
-            _coord = value;
+            position.coord = value;
             UpdatePosition();
         }
     }
 
     public void UpdatePosition()
     {
-        transform.position = new Vector3(coord.x * 2.0f, 0.0f, coord.y * 2.0f);
+        transform.position = new Vector3(coord.x * 2.0f, 0.0f, -coord.y * 2.0f);
     }
 
 	[ContextMenu("Update Mesh")]

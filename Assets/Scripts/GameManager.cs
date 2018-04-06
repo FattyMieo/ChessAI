@@ -3,128 +3,158 @@ using System.Collections.Generic;
 using UnityEngine;
 using Chess;
 
+/// <summary>
+/// Main Game Manager
+/// Contain all functions to play the chess
+/// </summary>
 public class GameManager : MonoBehaviour
 {
-	private static GameManager _instance;
-	public static GameManager instance
-	{
-		get
-		{
-			if(_instance == null)
-				_instance = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
-			
-			return _instance;
-		}
-	}
-
-	// Use this for initialization
-	void Awake () 
-	{
-		if(_instance == null)
-			_instance = this;
-		else if(_instance != this)
-			Destroy(this.gameObject);
-	}
-
-    [Header("Settings")]
-	public ChessSettings settings;
-	public GameObject[] pieceMeshes;
-	public Material[] pieceMat;
-    public GameObject piecePrefab;
-    
-    [Header("Arrays")]
-    public ChessPieceScript[] pieces;
-    public List<ChessBoardSnapshot> snapshots;
-
-    void Start()
-	{
-        GenNewPieces();
-        GenNewBoard();
-    }
-
-    [ContextMenu("Generate New Pieces")]
-    void GenNewPieces()
+    private static GameManager _instance;
+    public static GameManager instance
     {
-        pieces = new ChessPieceScript[ChessSettings.totalPieces];
-
-        for(int i = 0; i < ChessSettings.totalPieces; i++)
+        get
         {
-            pieces[i] = Instantiate(piecePrefab, this.transform).GetComponent<ChessPieceScript>();
-            
-            if(i < 16)
-            {
-                if (i < 8)
-                {
-                    pieces[i].coord = new ChessCoordinate(i, 1);
-                    pieces[i].type = ChessPieceType.WhitePawn;
-                }
-                else
-                {
-                    pieces[i].coord = new ChessCoordinate(i - 8, 6);
-                    pieces[i].type = ChessPieceType.BlackPawn;
-                }
-            }
-            else
-            {
-                if ((i - 16) < 8)
-                {
-                    pieces[i].coord = new ChessCoordinate(i - 16, 0);
-                    switch (pieces[i].coord.x)
-                    {
-                        case 0:
-                        case 7:
-                            pieces[i].type = ChessPieceType.WhiteRook;
-                            break;
-                        case 1:
-                        case 6:
-                            pieces[i].type = ChessPieceType.WhiteKnight;
-                            break;
-                        case 2:
-                        case 5:
-                            pieces[i].type = ChessPieceType.WhiteBishop;
-                            break;
-                        case 3:
-                            pieces[i].type = ChessPieceType.WhiteQueen;
-                            break;
-                        case 4:
-                            pieces[i].type = ChessPieceType.WhiteKing;
-                            break;
-                    }
-                }
-                else
-                {
-                    pieces[i].coord = new ChessCoordinate(i - 16 - 8, 7);
-                    switch (pieces[i].coord.x)
-                    {
-                        case 0:
-                        case 7:
-                            pieces[i].type = ChessPieceType.BlackRook;
-                            break;
-                        case 1:
-                        case 6:
-                            pieces[i].type = ChessPieceType.BlackKnight;
-                            break;
-                        case 2:
-                        case 5:
-                            pieces[i].type = ChessPieceType.BlackBishop;
-                            break;
-                        case 3:
-                            pieces[i].type = ChessPieceType.BlackQueen;
-                            break;
-                        case 4:
-                            pieces[i].type = ChessPieceType.BlackKing;
-                            break;
-                    }
-                }
-            }
+            if (_instance == null)
+                _instance = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+
+            return _instance;
         }
     }
 
-    [ContextMenu("Generate New Board")]
-    void GenNewBoard()
+    // Use this for initialization
+    void Awake()
     {
-        ChessBoardSnapshot newBoard = ScriptableObject.CreateInstance<ChessBoardSnapshot>();
-        newBoard.name = "Board #" + snapshots.Count.ToString("0000");
+        if (_instance == null)
+            _instance = this;
+        else if (_instance != this)
+            Destroy(this.gameObject);
+    }
+
+    [Header("Settings")]
+    public ChessSettings settings;
+    public GameObject[] pieceMeshes;
+    public Material[] pieceMat;
+    public GameObject piecePrefab;
+    public ChessBoardSnapshot defaultBoard;
+
+    [Header("Arrays")]
+    public Dictionary<ChessCoordinate, ChessPieceScript> piecesDict = new Dictionary<ChessCoordinate, ChessPieceScript>();
+    public List<ChessBoardSnapshot> snapshots;
+    public ChessBoardSnapshot latestSnapshot
+    {
+        get
+        {
+            if (snapshots.Count <= 0) return null;
+            return snapshots[snapshots.Count - 1];
+        }
+    }
+
+    void Start()
+    {
+        //GenNewPieces();
+        GenNextSnapshot(defaultBoard);
+        ReadFromSnapshot(latestSnapshot);
+
+        // Debug test
+        //Move(new ChessCoordinate(0, 6), new ChessCoordinate(0, 4));
+    }
+
+    /// <summary>
+    /// Use a board snapshot to create the board
+    /// </summary>
+    /// <param name="boardSnapshot"></param>
+    void ReadFromSnapshot(ChessBoardSnapshot boardSnapshot)
+    {
+        ChessPieceType[] board = boardSnapshot.board;
+        if (board.Length != ChessSettings.boardSize * ChessSettings.boardSize) return;
+
+        foreach (KeyValuePair<ChessCoordinate, ChessPieceScript> kvp in piecesDict)
+            Destroy(kvp.Value.gameObject);
+
+        piecesDict.Clear();
+
+        for (int i = 0; i < board.Length; i++)
+        {
+            ChessPieceScript newPiece = Instantiate(piecePrefab, this.transform).GetComponent<ChessPieceScript>();
+
+            if (!board[i].IsValid()) continue;
+            if (board[i].IsEmpty()) continue;
+            
+            newPiece.coord = i.ToChessCoord();
+            newPiece.type = board[i];
+
+            piecesDict.Add(new ChessCoordinate(newPiece.coord), newPiece);
+        }
+    }
+
+    /// <summary>
+    /// Adjust the board snapshot and return it back
+    /// </summary>
+    /// <param name="boardSnapshot"></param>
+    /// <param name="newName"></param>
+    /// <param name="changed">Changes to the positions</param>
+    /// <returns></returns>
+    ChessBoardSnapshot AdjustBoard(ChessBoardSnapshot boardSnapshot, string newName = "Board", params ChessPosition[] changed)
+    {
+        //ChessBoardSnapshot newBoard = ScriptableObject.CreateInstance<ChessBoardSnapshot>();
+        ChessBoardSnapshot newBoard = ScriptableObject.Instantiate<ChessBoardSnapshot>(boardSnapshot);
+        newBoard.name = newName;
+
+        for(int i = 0; i < changed.Length; i++)
+        {
+            int aCoord = changed[i].coord.ToArrayCoord();
+            newBoard.board[aCoord] = changed[i].type;
+        }
+
+        return newBoard;
+    }
+
+    /// <summary>
+    /// Generate the next board snapshot
+    /// </summary>
+    /// <param name="boardSnapshot"></param>
+    /// <param name="changed">Changes to the positions</param>
+    /// <returns></returns>
+    ChessBoardSnapshot GenNextSnapshot(ChessBoardSnapshot boardSnapshot, params ChessPosition[] changed)
+    {
+        ChessBoardSnapshot newBoard = AdjustBoard(boardSnapshot, "Board #" + snapshots.Count.ToString("0000"), changed);
         snapshots.Add(newBoard);
+        return newBoard;
+    }
+
+    /// <summary>
+    /// Generate the next board snapshot
+    /// </summary>
+    /// <param name="changed">Changes to the positions</param>
+    /// <returns></returns>
+    ChessBoardSnapshot GenNextSnapshot(params ChessPosition[] changed)
+    {
+        return GenNextSnapshot(latestSnapshot, changed);
+    }
+
+    /// <summary>
+    /// Make a move from the latest snapshot
+    /// </summary>
+    /// <param name="from">Current position's coordinate</param>
+    /// <param name="to">Destination position's coordinate</param>
+    public void Move(ChessCoordinate from, ChessCoordinate to)
+    {
+        if (!piecesDict.ContainsKey(from)) return;
+
+        ChessPieceScript selectedPiece = piecesDict[from];
+
+        // Debug: If the destination is not empty, then skip it
+        if (piecesDict.ContainsKey(to)) return;
+
+        selectedPiece.coord = to;
+
+        piecesDict.Remove(from);
+        piecesDict.Add(to, selectedPiece);
+
+        GenNextSnapshot
+        (
+            new ChessPosition(ChessPieceType.None, from),
+            piecesDict[to].position
+        );
     }
 }

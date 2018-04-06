@@ -78,5 +78,5 @@ MonoBehaviour:
   - {fileID: 2100000, guid: e01854b2402e7a143a40d024089d3772, type: 2}
   piecePrefab: {fileID: 1061284805119028, guid: efa8e40e2c991794dbe8c7b965e0a614,
     type: 2}
-  pieces: []
+  defaultBoard: {fileID: 11400000, guid: 4bb583276b27e0d4e8dfa7dd39d498ca, type: 2}
   snapshots: []

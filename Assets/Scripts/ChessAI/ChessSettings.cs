@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace Chess
 {
+    /// <summary>
+    /// Contains settings for the game
+    /// </summary>
 	[Serializable]
 	public class ChessSettings //Turn into scriptableObject/singleton later
     {

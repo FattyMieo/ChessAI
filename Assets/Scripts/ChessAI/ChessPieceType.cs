@@ -21,7 +21,10 @@ namespace Chess
 
         Total
     }
-
+    
+    /// <summary>
+    /// Extension for ChessPieceType
+    /// </summary>
     public static class ChessPieceTypeExtension
     {
         private static char[] iconArray =
@@ -52,6 +55,16 @@ namespace Chess
                 return iconArray[type];
 
             return ' ';
+        }
+
+        public static bool IsValid(this ChessPieceType type)
+        {
+            return type != ChessPieceType.Total;
+        }
+
+        public static bool IsEmpty(this ChessPieceType type)
+        {
+            return type == ChessPieceType.None;
         }
 
         public static bool IsWhite(this ChessPieceType type)
