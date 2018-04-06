@@ -11,7 +11,7 @@ public class ChessPieceScript : MonoBehaviour
 {
     private GameObject mesh;
     public ChessPosition position;
-    public ChessPieceType type
+    public ChessPieceType Type
     {
         get { return position.type; }
         set
@@ -21,7 +21,7 @@ public class ChessPieceScript : MonoBehaviour
             UpdateMesh();
         }
     }
-	public ChessCoordinate coord
+	public ChessCoordinate Coord
     {
         get { return position.coord; }
         set
@@ -33,7 +33,7 @@ public class ChessPieceScript : MonoBehaviour
 
     public void UpdatePosition()
     {
-        transform.position = new Vector3(coord.x * 2.0f, 0.0f, -coord.y * 2.0f);
+        transform.position = new Vector3(Coord.x * 2.0f, 0.0f, -Coord.y * 2.0f);
     }
 
 	[ContextMenu("Update Mesh")]
@@ -58,27 +58,27 @@ public class ChessPieceScript : MonoBehaviour
 			return;
         }
 
-        mesh = Instantiate(GameManager.instance.pieceMeshes[meshType], this.transform);
+        mesh = Instantiate(GameManager.Instance.pieceMeshes[meshType], this.transform);
         MaterialPainter meshMatPainter = mesh.GetComponent<MaterialPainter>();
-		meshMatPainter.mat = GameManager.instance.pieceMat[colorType];
+		meshMatPainter.mat = GameManager.Instance.pieceMat[colorType];
 		meshMatPainter.GetComponent<MaterialPainter>().UpdateMaterial();
 	}
 
 	int FindMeshType()
     {
-        if (type.IsPawn())   return 0;
-        if (type.IsKnight()) return 1;
-        if (type.IsBishop()) return 2;
-        if (type.IsRook())   return 3;
-        if (type.IsQueen())  return 4;
-        if (type.IsKing())   return 5;
+        if (Type.IsPawn())   return 0;
+        if (Type.IsKnight()) return 1;
+        if (Type.IsBishop()) return 2;
+        if (Type.IsRook())   return 3;
+        if (Type.IsQueen())  return 4;
+        if (Type.IsKing())   return 5;
 		return -1;
 	}
 
 	int FindColorType()
     {
-        if (type.IsWhite()) return 0;
-        if (type.IsBlack()) return 1;
+        if (Type.IsWhite()) return 0;
+        if (Type.IsBlack()) return 1;
         return -1;
 	}
 }

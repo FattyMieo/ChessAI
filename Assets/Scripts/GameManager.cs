@@ -10,7 +10,7 @@ using Chess;
 public class GameManager : MonoBehaviour
 {
     private static GameManager _instance;
-    public static GameManager instance
+    public static GameManager Instance
     {
         get
         {
@@ -40,7 +40,11 @@ public class GameManager : MonoBehaviour
     [Header("Arrays")]
     public Dictionary<ChessCoordinate, ChessPieceScript> piecesDict = new Dictionary<ChessCoordinate, ChessPieceScript>();
     public List<ChessBoardSnapshot> snapshots;
-    public ChessBoardSnapshot latestSnapshot
+
+    /// <summary>
+    /// Return the latest snapshot in the list
+    /// </summary>
+    public ChessBoardSnapshot LatestSnapshot
     {
         get
         {
@@ -53,7 +57,7 @@ public class GameManager : MonoBehaviour
     {
         //GenNewPieces();
         GenNextSnapshot(defaultBoard);
-        ReadFromSnapshot(latestSnapshot);
+        LoadFromSnapshot(LatestSnapshot);
 
         // Debug test
         //Move(new ChessCoordinate(0, 6), new ChessCoordinate(0, 4));
@@ -63,8 +67,10 @@ public class GameManager : MonoBehaviour
     /// Use a board snapshot to create the board
     /// </summary>
     /// <param name="boardSnapshot"></param>
-    void ReadFromSnapshot(ChessBoardSnapshot boardSnapshot)
+    void LoadFromSnapshot(ChessBoardSnapshot boardSnapshot)
     {
+        if (boardSnapshot == null) return;
+
         ChessPieceType[] board = boardSnapshot.board;
         if (board.Length != ChessSettings.boardSize * ChessSettings.boardSize) return;
 
@@ -80,10 +86,10 @@ public class GameManager : MonoBehaviour
             if (!board[i].IsValid()) continue;
             if (board[i].IsEmpty()) continue;
             
-            newPiece.coord = i.ToChessCoord();
-            newPiece.type = board[i];
+            newPiece.Coord = i.ToChessCoord();
+            newPiece.Type = board[i];
 
-            piecesDict.Add(new ChessCoordinate(newPiece.coord), newPiece);
+            piecesDict.Add(new ChessCoordinate(newPiece.Coord), newPiece);
         }
     }
 
@@ -129,7 +135,7 @@ public class GameManager : MonoBehaviour
     /// <returns></returns>
     ChessBoardSnapshot GenNextSnapshot(params ChessPosition[] changed)
     {
-        return GenNextSnapshot(latestSnapshot, changed);
+        return GenNextSnapshot(LatestSnapshot, changed);
     }
 
     /// <summary>
@@ -146,7 +152,7 @@ public class GameManager : MonoBehaviour
         // Debug: If the destination is not empty, then skip it
         if (piecesDict.ContainsKey(to)) return;
 
-        selectedPiece.coord = to;
+        selectedPiece.Coord = to;
 
         piecesDict.Remove(from);
         piecesDict.Add(to, selectedPiece);
