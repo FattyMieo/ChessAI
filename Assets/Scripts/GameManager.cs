@@ -21,17 +21,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Use this for initialization
-    void Awake()
-    {
-        if (_instance == null)
-            _instance = this;
-        else if (_instance != this)
-            Destroy(this.gameObject);
-    }
-
     [Header("Settings")]
     public ChessSettings settings;
+    public ChessProfiles pieceProfiles;
     public GameObject[] pieceMeshes;
     public Material[] pieceMat;
     public GameObject piecePrefab;
@@ -52,15 +44,22 @@ public class GameManager : MonoBehaviour
             return snapshots[snapshots.Count - 1];
         }
     }
+    
+    // Use this for initialization
+    void Awake()
+    {
+        if (_instance == null)
+            _instance = this;
+        else if (_instance != this)
+            Destroy(this.gameObject);
+
+        pieceProfiles.Init();
+    }
 
     void Start()
     {
-        //GenNewPieces();
         GenNextSnapshot(defaultBoard);
         LoadFromSnapshot(LatestSnapshot);
-
-        // Debug test
-        //Move(new ChessCoordinate(0, 6), new ChessCoordinate(0, 4));
     }
 
     /// <summary>
@@ -145,16 +144,36 @@ public class GameManager : MonoBehaviour
     /// <param name="to">Destination position's coordinate</param>
     public void Move(ChessCoordinate from, ChessCoordinate to)
     {
-        if (!piecesDict.ContainsKey(from)) return;
+        if (!from.IsWithinRange()) return;
+        if (!to.IsWithinRange()) return;
+
+        if (!piecesDict.ContainsKey(from))
+        {
+            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is an INVALID piece.");
+            return;
+        }
 
         ChessPieceScript selectedPiece = piecesDict[from];
 
-        // Debug: If the destination is not empty, then skip it
-        if (piecesDict.ContainsKey(to)) return;
+        if (piecesDict.ContainsKey(to))
+        {
+            if (selectedPiece.Type.IsSameTeamAs(piecesDict[to].Type))
+            {
+                Debug.LogWarning("Move piece failed.\nReason: (" + to.x + ", " + to.y + ") is BLOCKED by allied piece.");
+                return;
+            }
+        }
+
+        if(!IsValidMove(selectedPiece.Type, from, to))
+        {
+            Debug.LogWarning("Move piece failed.\nReason: " + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ") is INVALID.");
+            return;
+        }
 
         selectedPiece.Coord = to;
 
         piecesDict.Remove(from);
+        piecesDict.Remove(to);
         piecesDict.Add(to, selectedPiece);
 
         GenNextSnapshot
@@ -162,5 +181,58 @@ public class GameManager : MonoBehaviour
             new ChessPosition(ChessPieceType.None, from),
             piecesDict[to].position
         );
+    }
+
+    public bool IsValidMove(ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
+    {
+        ChessPieceMove[] possibleMoves = pieceProfiles.dict[type].possibleMoves;
+        for (int i = 0; i < possibleMoves.Length; i++)
+        {
+            if(possibleMoves[i].isSpecialMove)
+            {
+                if (!IsValidSpecialMove(possibleMoves[i].move, type, from, to))
+                    continue;
+            }
+
+            if(possibleMoves[i].isRepeatable)
+            {
+                ChessCoordinate temp = from + possibleMoves[i].move;
+
+                while(temp.IsWithinRange())
+                {
+                    if (temp == to) return true;
+                    temp += possibleMoves[i].move;
+                }
+            }
+            else
+            {
+                if (from + possibleMoves[i].move == to) return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool IsValidSpecialMove(ChessCoordinate move, ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
+    {
+        // Pawn - Move 2 square when starting from initial position
+        if (type == ChessPieceType.WhitePawn)
+        {
+            if(move.x == 0 && move.y == -2)
+            {
+                if (from.y == 6)
+                    return true;
+            }
+        }
+        else if (type == ChessPieceType.BlackPawn)
+        {
+            if (move.x == 0 && move.y == 2)
+            {
+                if (from.y == 1)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }

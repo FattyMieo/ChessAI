@@ -11,5 +11,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72e1514684d45bf42ab65fc079371a2c, type: 3}
   m_Name: BlackPawn
   m_EditorClassIdentifier: 
-  type: 0
+  type: 7
   score: 0
+  possibleMoves:
+  - move:
+      x: 0
+      y: 1
+    isRepeatable: 0
+    isSpecialMove: 0
+  - move:
+      x: 0
+      y: 2
+    isRepeatable: 0
+    isSpecialMove: 1

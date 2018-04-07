@@ -13,7 +13,5 @@ namespace Chess
     {
         public const int boardSize = 8;
         public const int totalPieces = 32;
-
-        public ChessPieceProfile[] pieceProfiles;
 	}
 }

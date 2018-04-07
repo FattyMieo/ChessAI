@@ -11,5 +11,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72e1514684d45bf42ab65fc079371a2c, type: 3}
   m_Name: WhiteRook
   m_EditorClassIdentifier: 
-  type: 0
+  type: 4
   score: 0
+  possibleMoves:
+  - move:
+      x: 1
+      y: 0
+    isRepeatable: 1
+    isSpecialMove: 0
+  - move:
+      x: -1
+      y: 0
+    isRepeatable: 1
+    isSpecialMove: 0
+  - move:
+      x: 0
+      y: 1
+    isRepeatable: 1
+    isSpecialMove: 0
+  - move:
+      x: 0
+      y: -1
+    isRepeatable: 1
+    isSpecialMove: 0

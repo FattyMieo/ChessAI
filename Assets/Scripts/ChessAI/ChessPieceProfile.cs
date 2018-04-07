@@ -10,5 +10,6 @@ namespace Chess
 	{
 		public ChessPieceType type;
 		public int score;
+        public ChessPieceMove[] possibleMoves;
 	}
 }

@@ -97,6 +97,13 @@ namespace Chess
             return false;
         }
 
+        public static bool IsSameTeamAs(this ChessPieceType type1, ChessPieceType type2)
+        {
+            if (type1.IsWhite() && type2.IsWhite()) return true;
+            if (type1.IsBlack() && type2.IsBlack()) return true;
+            return false;
+        }
+
         public static bool IsPawn(this ChessPieceType type)
         {
             switch (type)

@@ -95,6 +95,26 @@ namespace Chess
             hash = hash * 23 + y.GetHashCode();
             return hash;
         }
+
+        public static ChessCoordinate operator +(ChessCoordinate c1, ChessCoordinate c2)
+        {
+            return new ChessCoordinate(c1.x + c2.x, c1.y + c2.y);
+        }
+
+        public static ChessCoordinate operator -(ChessCoordinate c1, ChessCoordinate c2)
+        {
+            return new ChessCoordinate(c1.x - c2.x, c1.y - c2.y);
+        }
+
+        public static ChessCoordinate operator *(ChessCoordinate c1, ChessCoordinate c2)
+        {
+            return new ChessCoordinate(c1.x * c2.x, c1.y * c2.y);
+        }
+
+        public static ChessCoordinate operator /(ChessCoordinate c1, ChessCoordinate c2)
+        {
+            return new ChessCoordinate(c1.x / c2.x, c1.y / c2.y);
+        }
     }
 
 	public static class ChessCoordinateExtension
@@ -132,5 +152,14 @@ namespace Chess
 		{
 			return chessCoord.y * boardSize + chessCoord.x;
 		}
+
+        public static bool IsWithinRange(this ChessCoordinate chessCoord, int boardSize = ChessSettings.boardSize)
+        {
+            if (chessCoord.x < 0) return false;
+            if (chessCoord.x >= boardSize) return false;
+            if (chessCoord.y < 0) return false;
+            if (chessCoord.y >= boardSize) return false;
+            return true;
+        }
 	}
 }
