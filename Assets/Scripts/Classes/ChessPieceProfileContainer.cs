@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using Chess;
 
+/// <summary>
+/// A class to convert profiles into a dictionary
+/// </summary>
 [Serializable]
-public class ChessProfiles
+public class ChessPieceProfileContainer
 {
     public ChessPieceProfile[] profiles;
     public Dictionary<ChessPieceType, ChessPieceProfile> dict = new Dictionary<ChessPieceType, ChessPieceProfile>();

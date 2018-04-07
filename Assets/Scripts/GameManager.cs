@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Settings")]
     public ChessSettings settings;
-    public ChessProfiles pieceProfiles;
+    public ChessPieceProfileContainer pieceProfiles;
     public GameObject[] pieceMeshes;
     public Material[] pieceMat;
     public GameObject piecePrefab;
@@ -142,95 +142,132 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="from">Current position's coordinate</param>
     /// <param name="to">Destination position's coordinate</param>
-    public void Move(ChessCoordinate from, ChessCoordinate to)
+    public bool Move(ChessCoordinate from, ChessCoordinate to)
     {
-        if (!from.IsWithinRange()) return;
-        if (!to.IsWithinRange()) return;
+        if (!from.IsWithinRange())
+        {
+            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is an INVALID coordinate.");
+            return false;
+        }
+
+        if (!to.IsWithinRange())
+        {
+            Debug.LogWarning("Move piece failed.\nReason: (" + to.x + ", " + to.y + ") is an INVALID coordinate.");
+            return false;
+        }
 
         if (!piecesDict.ContainsKey(from))
         {
-            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is an INVALID piece.");
-            return;
+            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is EMPTY.");
+            return false;
         }
 
         ChessPieceScript selectedPiece = piecesDict[from];
 
-        if (piecesDict.ContainsKey(to))
-        {
-            if (selectedPiece.Type.IsSameTeamAs(piecesDict[to].Type))
-            {
-                Debug.LogWarning("Move piece failed.\nReason: (" + to.x + ", " + to.y + ") is BLOCKED by allied piece.");
-                return;
-            }
-        }
-
         if(!IsValidMove(selectedPiece.Type, from, to))
         {
             Debug.LogWarning("Move piece failed.\nReason: " + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ") is INVALID.");
-            return;
+            return false;
         }
 
         selectedPiece.Coord = to;
 
+        if (piecesDict.ContainsKey(to))
+            Destroy(piecesDict[to].gameObject);
+
         piecesDict.Remove(from);
         piecesDict.Remove(to);
-        piecesDict.Add(to, selectedPiece);
+        piecesDict.Add(new ChessCoordinate(to), selectedPiece);
 
         GenNextSnapshot
         (
             new ChessPosition(ChessPieceType.None, from),
-            piecesDict[to].position
+            new ChessPosition(selectedPiece.Type, to)
         );
+
+        return true;
     }
 
+    /// <summary>
+    /// Check whether it's a valid move for the specified piece
+    /// </summary>
+    /// <param name="type">The specified piece's type</param>
+    /// <param name="from">The specified piece's coordinate</param>
+    /// <param name="to">The destination's coordinate</param>
+    /// <returns></returns>
     public bool IsValidMove(ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
     {
         ChessPieceMove[] possibleMoves = pieceProfiles.dict[type].possibleMoves;
         for (int i = 0; i < possibleMoves.Length; i++)
         {
-            if(possibleMoves[i].isSpecialMove)
-            {
-                if (!IsValidSpecialMove(possibleMoves[i].move, type, from, to))
-                    continue;
-            }
+            if (!IsValidSpecialRule(possibleMoves[i].specialRule, type, from, to))
+                continue;
 
-            if(possibleMoves[i].isRepeatable)
-            {
-                ChessCoordinate temp = from + possibleMoves[i].move;
+            ChessCoordinate temp = from + possibleMoves[i].move;
+            int j = 0;
 
-                while(temp.IsWithinRange())
+            while
+            (
+                temp.IsWithinRange() &&
+                (possibleMoves[i].repeatTimes < 0 || j < possibleMoves[i].repeatTimes)
+            )
+            {
+                if (temp == to)
                 {
-                    if (temp == to) return true;
-                    temp += possibleMoves[i].move;
+                    if (possibleMoves[i].pattern == ChessPieceMovePattern.Normal)
+                    {
+                        return true;
+                    }
+                    if (possibleMoves[i].pattern == ChessPieceMovePattern.MoveOnly)
+                    {
+                        if (!piecesDict.ContainsKey(temp))
+                            return true;
+                    }
+                    else if (possibleMoves[i].pattern == ChessPieceMovePattern.CaptureOnly)
+                    {
+                        if (!piecesDict.ContainsKey(temp))
+                            break;
+
+                        if (piecesDict[temp].Type.IsDifferentTeamAs(type))
+                            return true;
+                    }
                 }
-            }
-            else
-            {
-                if (from + possibleMoves[i].move == to) return true;
+                else
+                {
+                    if (piecesDict.ContainsKey(temp))
+                        break;
+                }
+
+                temp += possibleMoves[i].move;
+                j++;
             }
         }
 
         return false;
     }
 
-    public bool IsValidSpecialMove(ChessCoordinate move, ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
+    /// <summary>
+    /// Check whether the special rule is matching for the specific piece
+    /// </summary>
+    /// <param name="specialRule">The special rule used</param>
+    /// <param name="type">The specified piece's type</param>
+    /// <param name="from">The specified piece's coordinate</param>
+    /// <param name="to">The destination's coordinate</param>
+    /// <returns></returns>
+    public bool IsValidSpecialRule(ChessPieceSpecialRule specialRule, ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
     {
+        if (specialRule == ChessPieceSpecialRule.None)
+            return true;
+
         // Pawn - Move 2 square when starting from initial position
-        if (type == ChessPieceType.WhitePawn)
+        if (specialRule == ChessPieceSpecialRule.Pawn2Squares)
         {
-            if(move.x == 0 && move.y == -2)
-            {
-                if (from.y == 6)
-                    return true;
-            }
-        }
-        else if (type == ChessPieceType.BlackPawn)
-        {
-            if (move.x == 0 && move.y == 2)
-            {
-                if (from.y == 1)
-                    return true;
-            }
+            if
+            (
+                (type.IsWhite() && from.y == 6) ||
+                (type.IsBlack() && from.y == 1)
+            )
+                return true;
         }
 
         return false;

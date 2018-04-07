@@ -2,6 +2,9 @@
 
 namespace Chess
 {
+    /// <summary>
+    /// Type of a chess piece
+    /// </summary>
     [Serializable]
     public enum ChessPieceType
     {
@@ -99,8 +102,23 @@ namespace Chess
 
         public static bool IsSameTeamAs(this ChessPieceType type1, ChessPieceType type2)
         {
+            if (!type1.IsValid()) return false;
+            if (!type2.IsValid()) return false;
+            if (type1.IsEmpty()) return false;
+            if (type2.IsEmpty()) return false;
             if (type1.IsWhite() && type2.IsWhite()) return true;
             if (type1.IsBlack() && type2.IsBlack()) return true;
+            return false;
+        }
+
+        public static bool IsDifferentTeamAs(this ChessPieceType type1, ChessPieceType type2)
+        {
+            if (!type1.IsValid()) return false;
+            if (!type2.IsValid()) return false;
+            if (type1.IsEmpty()) return false;
+            if (type2.IsEmpty()) return false;
+            if (type1.IsWhite() && type2.IsBlack()) return true;
+            if (type1.IsBlack() && type2.IsWhite()) return true;
             return false;
         }
 

@@ -2,23 +2,34 @@
 
 namespace Chess
 {
+    /// <summary>
+    /// A class that stores moving information of a chess piece
+    /// </summary>
     [Serializable]
     public class ChessPieceMove
     {
         public ChessCoordinate move;
-        public bool isRepeatable;
-        public bool isSpecialMove;
+        public int repeatTimes = 1;
+        public ChessPieceMovePattern pattern;
+        public ChessPieceSpecialRule specialRule;
+    }
 
-        public ChessPieceMove()
-        {
-            this.move = new ChessCoordinate(0, 0);
-            this.isRepeatable = false;
-        }
+    /// <summary>
+    /// Move patterns of a chess piece
+    /// </summary>
+    public enum ChessPieceMovePattern
+    {
+        Normal = 0,
+        MoveOnly,
+        CaptureOnly
+    }
 
-        public ChessPieceMove(ChessCoordinate move, bool isRepeating = false)
-        {
-            this.move = move;
-            this.isRepeatable = isRepeating;
-        }
+    /// <summary>
+    /// Special rules for moving a chess piece
+    /// </summary>
+    public enum ChessPieceSpecialRule
+    {
+        None,
+        Pawn2Squares
     }
 }
