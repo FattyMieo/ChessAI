@@ -17,10 +17,24 @@ MonoBehaviour:
   - move:
       x: 0
       y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 1
+    specialRule: 0
   - move:
       x: 0
-      y: -2
-    isRepeatable: 0
-    isSpecialMove: 1
+      y: -1
+    repeatTimes: 2
+    pattern: 1
+    specialRule: 1
+  - move:
+      x: -1
+      y: -1
+    repeatTimes: 1
+    pattern: 2
+    specialRule: 0
+  - move:
+      x: 1
+      y: -1
+    repeatTimes: 1
+    pattern: 2
+    specialRule: 0
