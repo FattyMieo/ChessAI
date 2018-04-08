@@ -72,6 +72,7 @@ public class GameManager : MonoBehaviour
         if (boardSnapshot == null) return;
 
         ChessPieceType[] board = boardSnapshot.board;
+        bool[] hasMoved = boardSnapshot.hasMoved;
         if (board.Length != ChessSettings.boardSize * ChessSettings.boardSize) return;
 
         foreach (KeyValuePair<int, ChessPieceScript> kvp in piecesDict)
@@ -88,6 +89,7 @@ public class GameManager : MonoBehaviour
             
             newPiece.Coord = i.ToChessCoord();
             newPiece.Type = board[i];
+            newPiece.HasMoved = hasMoved[i];
 
             piecesDict.Add(newPiece.Coord.ToArrayCoord(), newPiece);
         }
@@ -99,7 +101,9 @@ public class GameManager : MonoBehaviour
     /// <param name="boardSnapshot"></param>
     /// <param name="newName"></param>
     /// <param name="changed">Changes to the positions</param>
-    /// <returns></returns>
+    /// <returns>
+    /// A new modified snapshot
+    /// </returns>
     ChessBoardSnapshot AdjustBoard(ChessBoardSnapshot boardSnapshot, string newName = "Board", params ChessPosition[] changed)
     {
         //ChessBoardSnapshot newBoard = ScriptableObject.CreateInstance<ChessBoardSnapshot>();
@@ -110,6 +114,7 @@ public class GameManager : MonoBehaviour
         {
             int aCoord = changed[i].coord.ToArrayCoord();
             newBoard.board[aCoord] = changed[i].type;
+            newBoard.hasMoved[aCoord] = true;
         }
 
         return newBoard;
@@ -120,7 +125,9 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="boardSnapshot"></param>
     /// <param name="changed">Changes to the positions</param>
-    /// <returns></returns>
+    /// <returns>
+    /// A new modified snapshot
+    /// </returns>
     ChessBoardSnapshot GenNextSnapshot(ChessBoardSnapshot boardSnapshot, params ChessPosition[] changed)
     {
         ChessBoardSnapshot newBoard = AdjustBoard(boardSnapshot, "Board #" + snapshots.Count.ToString("0000"), changed);
@@ -132,7 +139,9 @@ public class GameManager : MonoBehaviour
     /// Generate the next board snapshot
     /// </summary>
     /// <param name="changed">Changes to the positions</param>
-    /// <returns></returns>
+    /// <returns>
+    /// A new modified snapshot
+    /// </returns>
     ChessBoardSnapshot GenNextSnapshot(params ChessPosition[] changed)
     {
         return GenNextSnapshot(LatestSnapshot, changed);
@@ -143,35 +152,69 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="from">Current position's coordinate</param>
     /// <param name="to">Destination position's coordinate</param>
+    /// <returns>
+    /// TRUE if move has successfully been executed.
+    /// </returns>
     public bool Move(ChessCoordinate from, ChessCoordinate to)
     {
+        ChessPosition[] resultPositions;
+
+        if(Move(from, to, out resultPositions))
+        {
+            GenNextSnapshot(resultPositions);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Make a move from the latest snapshot (Without generating the next snapshot)
+    /// </summary>
+    /// <param name="from">Current position's coordinate</param>
+    /// <param name="to">Destination position's coordinate</param>
+    /// <param name="resultPositions">The returning result of positions</param>
+    /// <returns>
+    /// TRUE if move is valid.
+    /// </returns>
+    private bool Move(ChessCoordinate from, ChessCoordinate to, out ChessPosition[] resultPositions)
+    {
+        resultPositions = null;
+
         if (!from.IsWithinRange())
         {
-            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is an INVALID coordinate.");
+            Debug.LogWarning("Failed to execute Move.\nReason: (" + from.x + ", " + from.y + ") is not within RANGE.");
             return false;
         }
 
         if (!to.IsWithinRange())
         {
-            Debug.LogWarning("Move piece failed.\nReason: (" + to.x + ", " + to.y + ") is an INVALID coordinate.");
+            Debug.LogWarning("Failed to execute Move.\nReason: (" + to.x + ", " + to.y + ") is not within RANGE.");
             return false;
         }
 
         if (!piecesDict.ContainsKey(from.ToArrayCoord()))
         {
-            Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is EMPTY.");
+            Debug.LogWarning("Failed to execute Move.\nReason: (" + from.x + ", " + from.y + ") is EMPTY.");
             return false;
         }
 
         ChessPieceScript selectedPiece = piecesDict[from.ToArrayCoord()];
+        ChessPieceSpecialRule specialRule = ChessPieceSpecialRule.None;
+        ChessPosition[] castlingPositions;
 
-        if(!IsValidMove(selectedPiece.Type, from, to))
+        if
+        (
+            !IsValidMove(selectedPiece.position, from, to, out specialRule) ||
+            !AdditionalMove(specialRule, selectedPiece.position, out castlingPositions)
+        )
         {
-            Debug.LogWarning("Move piece failed.\nReason: " + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ") is INVALID.");
+            Debug.LogWarning("Failed to execute Move.\nReason: " + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ") is INVALID.");
             return false;
         }
 
         selectedPiece.Coord = to;
+        selectedPiece.HasMoved = true;
 
         if (piecesDict.ContainsKey(to.ToArrayCoord()))
             Destroy(piecesDict[to.ToArrayCoord()].gameObject);
@@ -180,11 +223,59 @@ public class GameManager : MonoBehaviour
         piecesDict.Remove(to.ToArrayCoord());
         piecesDict.Add(to.ToArrayCoord(), selectedPiece);
 
-        GenNextSnapshot
-        (
+        List<ChessPosition> resultPositionsList = new List<ChessPosition>()
+        {
             new ChessPosition(ChessPieceType.None, from),
             new ChessPosition(selectedPiece.Type, to)
-        );
+        };
+
+        if (castlingPositions != null)
+        {
+            for (int i = 0; i < castlingPositions.Length; i++)
+                resultPositionsList.Add(castlingPositions[i]);
+        }
+
+        resultPositions = resultPositionsList.ToArray();
+
+        Debug.Log("Succeeded to execute Move.\n" + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ").");
+
+        return true;
+    }
+
+    /// <summary>
+    /// Make an additional special move from the latest snapshot (Without generating the next snapshot)
+    /// </summary>
+    /// <param name="specialRule">The special rule used</param>
+    /// <param name="position">The specified piece's data</param>
+    /// <param name="resultPositions">The returning result of positions</param>
+    /// <returns>
+    /// TRUE if move is valid.
+    /// </returns>
+    private bool AdditionalMove(ChessPieceSpecialRule specialRule, ChessPosition position, out ChessPosition[] resultPositions)
+    {
+        resultPositions = null;
+
+        if (specialRule == ChessPieceSpecialRule.CastlingLeft || specialRule == ChessPieceSpecialRule.CastlingRight)
+        {
+            int xFromCoord = position.coord.x;
+            int xToCoord = position.coord.x;
+
+            if (specialRule == ChessPieceSpecialRule.CastlingLeft)
+            {
+                xFromCoord = 0;
+                xToCoord -= 1;
+            }
+            else if (specialRule == ChessPieceSpecialRule.CastlingRight)
+            {
+                xFromCoord = ChessSettings.boardSize - 1;
+                xToCoord += 1;
+            }
+
+            ChessCoordinate rookFromCoord = new ChessCoordinate(xFromCoord, position.coord.y);
+            ChessCoordinate rookToCoord = new ChessCoordinate(xToCoord, position.coord.y);
+                
+            return Move(rookFromCoord, rookToCoord, out resultPositions);
+        }
 
         return true;
     }
@@ -192,16 +283,21 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Check whether it's a valid move for the specified piece
     /// </summary>
-    /// <param name="type">The specified piece's type</param>
+    /// <param name="position">The specified piece's data</param>
     /// <param name="from">The specified piece's coordinate</param>
     /// <param name="to">The destination's coordinate</param>
-    /// <returns></returns>
-    public bool IsValidMove(ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
+    /// <param name="specialRule">The special rule used</param>
+    /// <returns>
+    /// TRUE if move is valid.
+    /// </returns>
+    public bool IsValidMove(ChessPosition position, ChessCoordinate from, ChessCoordinate to, out ChessPieceSpecialRule specialRule)
     {
-        ChessPieceMove[] possibleMoves = profilesDict[type].possibleMoves;
+        specialRule = ChessPieceSpecialRule.None;
+        ChessPieceMove[] possibleMoves = profilesDict[position.type].possibleMoves;
         for (int i = 0; i < possibleMoves.Length; i++)
         {
-            if (!IsValidSpecialRule(possibleMoves[i].specialRule, type, from, to))
+            specialRule = possibleMoves[i].specialRule;
+            if (!IsValidSpecialRule(possibleMoves[i].specialRule, position, from, to))
                 continue;
 
             ChessCoordinate temp = from + possibleMoves[i].move;
@@ -217,20 +313,30 @@ public class GameManager : MonoBehaviour
                 {
                     if (possibleMoves[i].pattern == ChessPieceMovePattern.Normal)
                     {
+                        if (piecesDict.ContainsKey(temp.ToArrayCoord()))
+                        {
+                            if (piecesDict[temp.ToArrayCoord()].Type.IsSameTeamAs(position.type))
+                                break;
+                        }
+
                         return true;
                     }
-                    if (possibleMoves[i].pattern == ChessPieceMovePattern.MoveOnly)
+                    else if (possibleMoves[i].pattern == ChessPieceMovePattern.MoveOnly)
                     {
-                        if (!piecesDict.ContainsKey(temp.ToArrayCoord()))
-                            return true;
+                        if (piecesDict.ContainsKey(temp.ToArrayCoord()))
+                            break;
+
+                        return true;
                     }
                     else if (possibleMoves[i].pattern == ChessPieceMovePattern.CaptureOnly)
                     {
                         if (!piecesDict.ContainsKey(temp.ToArrayCoord()))
                             break;
 
-                        if (piecesDict[temp.ToArrayCoord()].Type.IsDifferentTeamAs(type))
-                            return true;
+                        if (piecesDict[temp.ToArrayCoord()].Type.IsSameTeamAs(position.type))
+                            break;
+
+                        return true;
                     }
                 }
                 else
@@ -251,11 +357,13 @@ public class GameManager : MonoBehaviour
     /// Check whether the special rule is matching for the specific piece
     /// </summary>
     /// <param name="specialRule">The special rule used</param>
-    /// <param name="type">The specified piece's type</param>
+    /// <param name="position">The specified piece's data</param>
     /// <param name="from">The specified piece's coordinate</param>
     /// <param name="to">The destination's coordinate</param>
-    /// <returns></returns>
-    public bool IsValidSpecialRule(ChessPieceSpecialRule specialRule, ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
+    /// <returns>
+    /// TRUE if move is valid regarding special rule.
+    /// </returns>
+    public bool IsValidSpecialRule(ChessPieceSpecialRule specialRule, ChessPosition position, ChessCoordinate from, ChessCoordinate to)
     {
         if (specialRule == ChessPieceSpecialRule.None)
             return true;
@@ -263,12 +371,36 @@ public class GameManager : MonoBehaviour
         // Pawn - Move 2 square when starting from initial position
         if (specialRule == ChessPieceSpecialRule.Pawn2Squares)
         {
-            if
-            (
-                (type.IsWhite() && from.y == 6) ||
-                (type.IsBlack() && from.y == 1)
-            )
-                return true;
+            if (position.hasMoved)
+                return false;
+
+            return true;
+        }
+
+        if (specialRule == ChessPieceSpecialRule.CastlingLeft || specialRule == ChessPieceSpecialRule.CastlingRight)
+        {
+            if (position.hasMoved)
+                return false;
+
+            int xCoord = position.coord.x;
+
+            if (specialRule == ChessPieceSpecialRule.CastlingLeft)
+                xCoord = 0;
+            else if (specialRule == ChessPieceSpecialRule.CastlingRight)
+                xCoord = ChessSettings.boardSize - 1;
+
+            int rookCoord = new ChessCoordinate(xCoord, position.coord.y).ToArrayCoord();
+
+            if (!piecesDict.ContainsKey(rookCoord))
+                return false;
+
+            if (!piecesDict[rookCoord].Type.IsRook())
+                return false;
+
+            if (piecesDict[rookCoord].HasMoved)
+                return false;
+            
+            return true;
         }
 
         return false;

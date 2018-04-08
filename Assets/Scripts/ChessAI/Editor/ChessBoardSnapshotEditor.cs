@@ -8,11 +8,13 @@ using Chess;
 public class ChessBoardSnapshotEditor : Editor
 {
 	SerializedProperty board;
+    SerializedProperty hasMoved;
     bool showBoard = true;
     bool isWhite = true;
 
-	Color defaulBColor = Color.white;
+	Color defaultBColor = Color.white;
 	Color invertedColor = Color.gray;
+    Color tintBColor = Color.cyan + Color.red * 0.9f;
 
     public override void OnInspectorGUI()
     {
@@ -21,7 +23,10 @@ public class ChessBoardSnapshotEditor : Editor
 		board = serializedObject.FindProperty("board");
 		board.arraySize = ChessSettings.boardSize * ChessSettings.boardSize;
 
-		if (ShowBoardVisualization())
+        hasMoved = serializedObject.FindProperty("hasMoved");
+        hasMoved.arraySize = ChessSettings.boardSize * ChessSettings.boardSize;
+
+        if (ShowBoardVisualization())
         {
 			TogglePieceColor();
 			DrawBoard();
@@ -45,7 +50,7 @@ public class ChessBoardSnapshotEditor : Editor
 	void TogglePieceColor()
 	{
 		if (isWhite)
-			GUI.color = defaulBColor;
+			GUI.color = defaultBColor;
 		else
 			GUI.color = invertedColor;
 
@@ -53,7 +58,7 @@ public class ChessBoardSnapshotEditor : Editor
 		if (GUILayout.Button("", GUILayout.Width(13), GUILayout.Height(13)))
 			isWhite = !isWhite;
 
-		GUI.color = defaulBColor;
+		GUI.color = defaultBColor;
 
 		GUILayout.Space(7.5f);
 		EditorGUILayout.LabelField("Toggle Piece Color");
@@ -74,7 +79,11 @@ public class ChessBoardSnapshotEditor : Editor
 			// Button
 			GUIStyle gs = GUI.skin.button;
 			gs.fontSize = 30;
-			if(GUILayout.Button
+
+            if (hasMoved.GetArrayElementAtIndex(i).boolValue)
+                GUI.color = tintBColor;
+
+            if (GUILayout.Button
 			(
 				board.GetArrayElementAtIndex(i).enumValueIndex
 											   .ToChessPieceIcon()
@@ -84,9 +93,11 @@ public class ChessBoardSnapshotEditor : Editor
 			))
 			{
 				DoConversion(i);
-			}
+            }
 
-			i++;
+            GUI.color = defaultBColor;
+
+            i++;
 
 			if (i % ChessSettings.boardSize == 0)
 			{

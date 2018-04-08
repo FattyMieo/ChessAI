@@ -30,6 +30,8 @@ namespace Chess
     public enum ChessPieceSpecialRule
     {
         None,
-        Pawn2Squares
+        Pawn2Squares,
+        CastlingLeft,
+        CastlingRight,
     }
 }

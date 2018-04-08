@@ -30,6 +30,14 @@ public class ChessPieceScript : MonoBehaviour
             UpdatePosition();
         }
     }
+    public bool HasMoved
+    {
+        get { return position.hasMoved; }
+        set
+        {
+            position.hasMoved = value;
+        }
+    }
 
     public void UpdatePosition()
     {

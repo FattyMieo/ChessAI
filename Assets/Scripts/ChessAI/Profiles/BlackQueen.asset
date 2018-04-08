@@ -15,42 +15,50 @@ MonoBehaviour:
   score: 0
   possibleMoves:
   - move:
-      x: -1
-      y: 0
-    isRepeatable: 0
-    isSpecialMove: 0
-  - move:
       x: 1
       y: 0
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
+  - move:
+      x: -1
+      y: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 0
       y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
-  - move:
-      x: -1
-      y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 1
       y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
+  - move:
+      x: -1
+      y: -1
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 0
       y: 1
-    isRepeatable: 0
-    isSpecialMove: 0
-  - move:
-      x: -1
-      y: 1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 1
       y: 1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0
+  - move:
+      x: -1
+      y: 1
+    repeatTimes: -1
+    pattern: 0
+    specialRule: 0

@@ -11,5 +11,6 @@ namespace Chess
     public class ChessBoardSnapshot : ScriptableObject
 	{
 		public ChessPieceType[] board;
-	}
+        public bool[] hasMoved;
+    }
 }
