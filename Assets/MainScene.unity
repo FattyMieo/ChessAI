@@ -260,6 +260,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4709fbec498e99843b6ae5b1d07af8ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pressToRunMove: 0
+  from:
+    x: 0
+    y: 0
+  to:
+    x: 0
+    y: 0
 --- !u!4 &190033743
 Transform:
   m_ObjectHideFlags: 0

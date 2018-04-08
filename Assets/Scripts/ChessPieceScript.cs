@@ -9,7 +9,7 @@ using Chess;
 /// </summary>
 public class ChessPieceScript : MonoBehaviour
 {
-    private GameObject mesh;
+    private GameObject meshGO;
     public ChessPosition position;
     public ChessPieceType Type
     {
@@ -39,8 +39,8 @@ public class ChessPieceScript : MonoBehaviour
 	[ContextMenu("Update Mesh")]
 	public void UpdateMesh()
     {
-        if (mesh != null)
-            Destroy(mesh);
+        if (meshGO != null)
+            Destroy(meshGO);
 
         int meshType = FindMeshType();
 
@@ -58,8 +58,8 @@ public class ChessPieceScript : MonoBehaviour
 			return;
         }
 
-        mesh = Instantiate(GameManager.Instance.pieceMeshes[meshType], this.transform);
-        MaterialPainter meshMatPainter = mesh.GetComponent<MaterialPainter>();
+        meshGO = Instantiate(GameManager.Instance.pieceMeshes[meshType], this.transform);
+        MaterialPainter meshMatPainter = meshGO.GetComponent<MaterialPainter>();
 		meshMatPainter.mat = GameManager.Instance.pieceMat[colorType];
 		meshMatPainter.GetComponent<MaterialPainter>().UpdateMaterial();
 	}

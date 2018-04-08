@@ -23,14 +23,15 @@ public class GameManager : MonoBehaviour
 
     [Header("Settings")]
     public ChessSettings settings;
-    public ChessPieceProfileContainer pieceProfiles;
+    public ChessPieceProfile[] profiles;
+    private ChessPieceProfileDictionary profilesDict = new ChessPieceProfileDictionary();
     public GameObject[] pieceMeshes;
     public Material[] pieceMat;
     public GameObject piecePrefab;
     public ChessBoardSnapshot defaultBoard;
 
     [Header("Arrays")]
-    public Dictionary<ChessCoordinate, ChessPieceScript> piecesDict = new Dictionary<ChessCoordinate, ChessPieceScript>();
+    public Dictionary<int, ChessPieceScript> piecesDict = new Dictionary<int, ChessPieceScript>();
     public List<ChessBoardSnapshot> snapshots;
 
     /// <summary>
@@ -53,7 +54,7 @@ public class GameManager : MonoBehaviour
         else if (_instance != this)
             Destroy(this.gameObject);
 
-        pieceProfiles.Init();
+        profilesDict.Init(profiles);
     }
 
     void Start()
@@ -73,7 +74,7 @@ public class GameManager : MonoBehaviour
         ChessPieceType[] board = boardSnapshot.board;
         if (board.Length != ChessSettings.boardSize * ChessSettings.boardSize) return;
 
-        foreach (KeyValuePair<ChessCoordinate, ChessPieceScript> kvp in piecesDict)
+        foreach (KeyValuePair<int, ChessPieceScript> kvp in piecesDict)
             Destroy(kvp.Value.gameObject);
 
         piecesDict.Clear();
@@ -88,7 +89,7 @@ public class GameManager : MonoBehaviour
             newPiece.Coord = i.ToChessCoord();
             newPiece.Type = board[i];
 
-            piecesDict.Add(new ChessCoordinate(newPiece.Coord), newPiece);
+            piecesDict.Add(newPiece.Coord.ToArrayCoord(), newPiece);
         }
     }
 
@@ -156,13 +157,13 @@ public class GameManager : MonoBehaviour
             return false;
         }
 
-        if (!piecesDict.ContainsKey(from))
+        if (!piecesDict.ContainsKey(from.ToArrayCoord()))
         {
             Debug.LogWarning("Move piece failed.\nReason: (" + from.x + ", " + from.y + ") is EMPTY.");
             return false;
         }
 
-        ChessPieceScript selectedPiece = piecesDict[from];
+        ChessPieceScript selectedPiece = piecesDict[from.ToArrayCoord()];
 
         if(!IsValidMove(selectedPiece.Type, from, to))
         {
@@ -172,12 +173,12 @@ public class GameManager : MonoBehaviour
 
         selectedPiece.Coord = to;
 
-        if (piecesDict.ContainsKey(to))
-            Destroy(piecesDict[to].gameObject);
+        if (piecesDict.ContainsKey(to.ToArrayCoord()))
+            Destroy(piecesDict[to.ToArrayCoord()].gameObject);
 
-        piecesDict.Remove(from);
-        piecesDict.Remove(to);
-        piecesDict.Add(new ChessCoordinate(to), selectedPiece);
+        piecesDict.Remove(from.ToArrayCoord());
+        piecesDict.Remove(to.ToArrayCoord());
+        piecesDict.Add(to.ToArrayCoord(), selectedPiece);
 
         GenNextSnapshot
         (
@@ -197,7 +198,7 @@ public class GameManager : MonoBehaviour
     /// <returns></returns>
     public bool IsValidMove(ChessPieceType type, ChessCoordinate from, ChessCoordinate to)
     {
-        ChessPieceMove[] possibleMoves = pieceProfiles.dict[type].possibleMoves;
+        ChessPieceMove[] possibleMoves = profilesDict[type].possibleMoves;
         for (int i = 0; i < possibleMoves.Length; i++)
         {
             if (!IsValidSpecialRule(possibleMoves[i].specialRule, type, from, to))
@@ -220,21 +221,21 @@ public class GameManager : MonoBehaviour
                     }
                     if (possibleMoves[i].pattern == ChessPieceMovePattern.MoveOnly)
                     {
-                        if (!piecesDict.ContainsKey(temp))
+                        if (!piecesDict.ContainsKey(temp.ToArrayCoord()))
                             return true;
                     }
                     else if (possibleMoves[i].pattern == ChessPieceMovePattern.CaptureOnly)
                     {
-                        if (!piecesDict.ContainsKey(temp))
+                        if (!piecesDict.ContainsKey(temp.ToArrayCoord()))
                             break;
 
-                        if (piecesDict[temp].Type.IsDifferentTeamAs(type))
+                        if (piecesDict[temp.ToArrayCoord()].Type.IsDifferentTeamAs(type))
                             return true;
                     }
                 }
                 else
                 {
-                    if (piecesDict.ContainsKey(temp))
+                    if (piecesDict.ContainsKey(temp.ToArrayCoord()))
                         break;
                 }
 
