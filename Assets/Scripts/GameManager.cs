@@ -25,9 +25,12 @@ public class GameManager : MonoBehaviour
     public ChessSettings settings;
     public ChessPieceProfile[] profiles;
     private ChessPieceProfileDictionary profilesDict = new ChessPieceProfileDictionary();
+	private Transform chessPiecesParent;
     public GameObject[] pieceMeshes;
     public Material[] pieceMat;
     public GameObject piecePrefab;
+	public GameObject squareColPrefab;
+	private Transform squareColliderParent;
     public ChessBoardSnapshot defaultBoard;
 
     [Header("Arrays")]
@@ -54,14 +57,37 @@ public class GameManager : MonoBehaviour
         else if (_instance != this)
             Destroy(this.gameObject);
 
+		chessPiecesParent = (new GameObject()).transform;
+		chessPiecesParent.gameObject.name = "Chess Pieces";
+		chessPiecesParent.SetParent(this.transform);
+
+		squareColliderParent = (new GameObject()).transform;
+		squareColliderParent.gameObject.name = "Square Colliders";
+		squareColliderParent.SetParent(this.transform);
+
         profilesDict.Init(profiles);
     }
 
     void Start()
     {
-        GenNextSnapshot(defaultBoard);
-        LoadFromSnapshot(LatestSnapshot);
+		SpawnSquareColliders();
+		GenNextSnapshot(defaultBoard);
+		LoadFromSnapshot(LatestSnapshot);
     }
+
+	void SpawnSquareColliders()
+	{
+		for(int i = 0; i < ChessSettings.boardSize * ChessSettings.boardSize; i++)
+		{
+			float x = (i % ChessSettings.boardSize);
+			float y = Mathf.FloorToInt(i / ChessSettings.boardSize);
+			GameObject newSC = Instantiate
+			(
+				squareColPrefab, new Vector3(x * 2.0f, 0.0f, y * -2.0f), Quaternion.identity, squareColliderParent
+			);
+			newSC.name = squareColPrefab.name + " (" + x + "," + y + ")";
+		}
+	}
 
     /// <summary>
     /// Use a board snapshot to create the board
@@ -81,11 +107,12 @@ public class GameManager : MonoBehaviour
         piecesDict.Clear();
 
         for (int i = 0; i < board.Length; i++)
-        {
-            ChessPieceScript newPiece = Instantiate(piecePrefab, this.transform).GetComponent<ChessPieceScript>();
+		{
+			if (!board[i].IsValid()) continue;
+			if (board[i].IsEmpty()) continue;
 
-            if (!board[i].IsValid()) continue;
-            if (board[i].IsEmpty()) continue;
+			ChessPieceScript newPiece = Instantiate(piecePrefab, chessPiecesParent)
+											.GetComponent<ChessPieceScript>();
             
             newPiece.Coord = i.ToChessCoord();
             newPiece.Type = board[i];
