@@ -40,13 +40,13 @@ public class MoveTester : MonoBehaviour
 			out hit, 100.0f
 		))
 		{
-			if(lastSquare != selectedSquare)
+			if(!hasSelected || lastSquare != selectedSquare)
 			{
 				if(lastSquare != null)
 					lastSquare.SetVisibility(false);
 			}
 			lastSquare = hit.collider.GetComponent<SquareColliderScript>();
-			if(lastSquare != selectedSquare)
+			if(!hasSelected || lastSquare != selectedSquare)
 			{
 				lastSquare.SetColor(Color.white);
 				lastSquare.SetVisibility(true);
@@ -80,8 +80,10 @@ public class MoveTester : MonoBehaviour
 						if(from == to)
 						{
 							hasSelected = false;
-							if(selectedSquare != null)
+							if(selectedSquare != null && lastSquare != selectedSquare)
+							{
 								selectedSquare.SetVisibility(false);
+							}
 							return;
 						}
 
@@ -91,8 +93,10 @@ public class MoveTester : MonoBehaviour
 						}
 
 						hasSelected = false;
-						if(selectedSquare != null)
+						if(selectedSquare != null && lastSquare != selectedSquare)
+						{
 							selectedSquare.SetVisibility(false);
+						}
 					}
 				}
 			}
