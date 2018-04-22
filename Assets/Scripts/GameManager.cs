@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     [Header("Settings")]
     public ChessSettings settings;
     public ChessPieceProfile[] profiles;
-    private ChessPieceProfileDictionary profilesDict = new ChessPieceProfileDictionary();
+    [HideInInspector] public ChessPieceProfileDictionary profilesDict = new ChessPieceProfileDictionary();
 	private Transform chessPiecesParent;
     public GameObject[] pieceMeshes;
     public Material[] pieceMat;
@@ -95,28 +95,22 @@ public class GameManager : MonoBehaviour
     /// <param name="boardSnapshot"></param>
     void LoadFromSnapshot(ChessBoardSnapshot boardSnapshot)
     {
-        if (boardSnapshot == null) return;
+        List<ChessPosition> boardDict = boardSnapshot.ToList();
 
-        ChessPieceType[] board = boardSnapshot.board;
-        bool[] hasMoved = boardSnapshot.hasMoved;
-        if (board.Length != ChessSettings.boardSize * ChessSettings.boardSize) return;
+        if (boardDict.Count <= 0)
+            return;
 
         foreach (KeyValuePair<int, ChessPieceScript> kvp in piecesDict)
             Destroy(kvp.Value.gameObject);
 
         piecesDict.Clear();
-
-        for (int i = 0; i < board.Length; i++)
+        
+        for (int i = 0; i < boardDict.Count; i++)
 		{
-			if (!board[i].IsValid()) continue;
-			if (board[i].IsEmpty()) continue;
-
 			ChessPieceScript newPiece = Instantiate(piecePrefab, chessPiecesParent)
 											.GetComponent<ChessPieceScript>();
-            
-            newPiece.Coord = i.ToChessCoord();
-            newPiece.Type = board[i];
-            newPiece.HasMoved = hasMoved[i];
+
+            newPiece.Position = boardDict[i];
 
             piecesDict.Add(newPiece.Coord.ToArrayCoord(), newPiece);
         }
@@ -131,7 +125,7 @@ public class GameManager : MonoBehaviour
     /// <returns>
     /// A new modified snapshot
     /// </returns>
-    ChessBoardSnapshot AdjustBoard(ChessBoardSnapshot boardSnapshot, string newName = "Board", params ChessPosition[] changed)
+    public ChessBoardSnapshot AdjustBoard(ChessBoardSnapshot boardSnapshot, string newName = "Board", params ChessPosition[] changed)
     {
         //ChessBoardSnapshot newBoard = ScriptableObject.CreateInstance<ChessBoardSnapshot>();
         ChessBoardSnapshot newBoard = ScriptableObject.Instantiate<ChessBoardSnapshot>(boardSnapshot);
@@ -155,7 +149,7 @@ public class GameManager : MonoBehaviour
     /// <returns>
     /// A new modified snapshot
     /// </returns>
-    ChessBoardSnapshot GenNextSnapshot(ChessBoardSnapshot boardSnapshot, params ChessPosition[] changed)
+    public ChessBoardSnapshot GenNextSnapshot(ChessBoardSnapshot boardSnapshot, params ChessPosition[] changed)
     {
         ChessBoardSnapshot newBoard = AdjustBoard(boardSnapshot, "Board #" + snapshots.Count.ToString("0000"), changed);
         snapshots.Add(newBoard);
@@ -169,7 +163,7 @@ public class GameManager : MonoBehaviour
     /// <returns>
     /// A new modified snapshot
     /// </returns>
-    ChessBoardSnapshot GenNextSnapshot(params ChessPosition[] changed)
+    public ChessBoardSnapshot GenNextSnapshot(params ChessPosition[] changed)
     {
         return GenNextSnapshot(LatestSnapshot, changed);
     }
@@ -232,8 +226,8 @@ public class GameManager : MonoBehaviour
 
         if
         (
-            !IsValidMove(selectedPiece.position, from, to, out specialRule) ||
-            !AdditionalMove(specialRule, selectedPiece.position, out castlingPositions)
+            !IsValidMove(selectedPiece.Position, from, to, out specialRule) ||
+            !AdditionalMove(specialRule, selectedPiece.Position, out castlingPositions)
         )
         {
             Debug.LogWarning("Failed to execute Move.\nReason: " + selectedPiece.Type + " (" + from.x + ", " + from.y + ") --> (" + to.x + ", " + to.y + ") is INVALID.");
@@ -242,6 +236,27 @@ public class GameManager : MonoBehaviour
 
         selectedPiece.Coord = to;
         selectedPiece.HasMoved = true;
+
+        // Pawn Promotion
+        if (selectedPiece.Type.IsPawn())
+        {
+            if
+            (
+                selectedPiece.Type == ChessPieceType.WhitePawn &&
+                selectedPiece.Coord.y == 0
+            )
+            {
+                selectedPiece.Type = ChessPieceType.WhiteQueen;
+            }
+            else if
+            (
+                selectedPiece.Type == ChessPieceType.BlackPawn &&
+                selectedPiece.Coord.y == 7
+            )
+            {
+                selectedPiece.Type = ChessPieceType.BlackQueen;
+            }
+        }
 
         if (piecesDict.ContainsKey(to.ToArrayCoord()))
             Destroy(piecesDict[to.ToArrayCoord()].gameObject);

@@ -10,7 +10,19 @@ using Chess;
 public class ChessPieceScript : MonoBehaviour
 {
     private GameObject meshGO;
-    public ChessPosition position;
+    [SerializeField] private ChessPosition position;
+
+    public ChessPosition Position
+    {
+        get { return position; }
+        set
+        {
+            Type = value.type;
+            Coord = value.coord;
+            HasMoved = value.hasMoved;
+        }
+    }
+
     public ChessPieceType Type
     {
         get { return position.type; }

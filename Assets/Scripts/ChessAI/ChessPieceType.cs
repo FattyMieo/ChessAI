@@ -111,6 +111,15 @@ namespace Chess
             return false;
         }
 
+        public static bool IsSameTeamAs(this ChessPieceType pieceType, ChessPlayerType playerType)
+        {
+            if (!pieceType.IsValid()) return false;
+            if (pieceType.IsEmpty()) return false;
+            if (pieceType.IsWhite() && playerType == ChessPlayerType.White) return true;
+            if (pieceType.IsBlack() && playerType == ChessPlayerType.Black) return true;
+            return false;
+        }
+
         public static bool IsDifferentTeamAs(this ChessPieceType type1, ChessPieceType type2)
         {
             if (!type1.IsValid()) return false;
@@ -119,6 +128,15 @@ namespace Chess
             if (type2.IsEmpty()) return false;
             if (type1.IsWhite() && type2.IsBlack()) return true;
             if (type1.IsBlack() && type2.IsWhite()) return true;
+            return false;
+        }
+
+        public static bool IsDifferentTeamAs(this ChessPieceType pieceType, ChessPlayerType playerType)
+        {
+            if (!pieceType.IsValid()) return false;
+            if (pieceType.IsEmpty()) return false;
+            if (pieceType.IsWhite() && playerType == ChessPlayerType.Black) return true;
+            if (pieceType.IsBlack() && playerType == ChessPlayerType.White) return true;
             return false;
         }
 
