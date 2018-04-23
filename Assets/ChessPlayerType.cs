@@ -21,5 +21,15 @@ namespace Chess
         {
             return pieceType.IsDifferentTeamAs(playerType);
         }
+
+        public static ChessPlayerType ToOpposite(this ChessPlayerType playerType)
+        {
+            if (playerType == ChessPlayerType.White)
+                return ChessPlayerType.Black;
+            if (playerType == ChessPlayerType.Black)
+                return ChessPlayerType.White;
+
+            return playerType;
+        }
     }
 }

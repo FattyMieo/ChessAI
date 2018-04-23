@@ -78,5 +78,44 @@ namespace Chess
 
             return ret;
         }
+
+        public static int ToHashCode(this ChessPieceType[] board)
+        {
+            if(board.Length != ChessSettings.boardSize * ChessSettings.boardSize)
+                return 0;
+
+            int ret = 0;
+
+            for(int i = 0; i < board.Length; i++)
+            {
+                ret ^= (int)board[i];
+            }
+
+            return ret;
+        }
+
+        public static bool IsEndGame(this ChessBoardSnapshot boardSnapshot)
+        {
+            bool isOneKingAlive = false;
+
+            ChessPieceType[] board = boardSnapshot.board;
+
+            for (int i = 0; i < board.Length; i++)
+            {
+                if(board[i].IsKing())
+                {
+                    if(!isOneKingAlive)
+                    {
+                        isOneKingAlive = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }

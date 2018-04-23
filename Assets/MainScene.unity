@@ -191,6 +191,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3218383d86b14c547ab7adabb2b3126e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerType: 1
+  outcomes: []
+  isRunningMinimax: 0
+  hasRunMinimax: 0
+  iteration: 0
+  minimaxResult: {fileID: 0}
 --- !u!4 &225360700
 Transform:
   m_ObjectHideFlags: 0

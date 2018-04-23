@@ -93,7 +93,7 @@ public class GameManager : MonoBehaviour
     /// Use a board snapshot to create the board
     /// </summary>
     /// <param name="boardSnapshot"></param>
-    void LoadFromSnapshot(ChessBoardSnapshot boardSnapshot)
+    public void LoadFromSnapshot(ChessBoardSnapshot boardSnapshot)
     {
         List<ChessPosition> boardDict = boardSnapshot.ToList();
 
@@ -183,6 +183,7 @@ public class GameManager : MonoBehaviour
         if(Move(from, to, out resultPositions))
         {
             GenNextSnapshot(resultPositions);
+            AIManager.Instance.TestGenerateMinimax();
             return true;
         }
 
@@ -446,5 +447,29 @@ public class GameManager : MonoBehaviour
         }
 
         return false;
+    }
+
+    public int CalculateScore(ChessBoardSnapshot boardSnapshot, ChessPlayerType playerType)
+    {
+        int ret = 0;
+        ChessPieceType[] board = boardSnapshot.board;
+        ulong hash = board.ToZobristHash();
+        if (AIManager.Instance.tTable.ContainsKey(hash))
+            return AIManager.Instance.tTable[hash].score;
+
+        for (int i = 0; i < board.Length; i++)
+        {
+            if (!board[i].IsValid())
+                continue;
+            if (board[i].IsEmpty())
+                continue;
+
+            if(board[i].IsSameTeamAs(playerType))
+                ret += profilesDict[board[i]].score;
+            else if (board[i].IsDifferentTeamAs(playerType))
+                ret -= profilesDict[board[i]].score;
+        }
+
+        return ret;
     }
 }

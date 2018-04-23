@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Chess;
 
-[Serializable]
 public class MinimaxNode
 {
-    public ChessPlayerType playerTurn;
-    public List<ChessBoardSnapshot> outcomes;
+    public ulong parentHash;
+    public List<ulong> childrenHash = new List<ulong>();
 
-    public MinimaxNode(ChessPlayerType playerTurn)
-    {
-        outcomes = new List<ChessBoardSnapshot>();
-    }
+    public ulong hash;
+    public int score;
 
-    public MinimaxNode(ChessPlayerType playerTurn, List<ChessBoardSnapshot> list)
+    public MinimaxNode(ulong hash, int score)
     {
-        this.playerTurn = playerTurn;
-        outcomes = list;
+        this.hash = hash;
+        this.score = score;
     }
 }

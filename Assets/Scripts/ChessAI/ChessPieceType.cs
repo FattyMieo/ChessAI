@@ -47,6 +47,8 @@ namespace Chess
             '♚'
         };
 
+        public const int Total = 12;
+
         public static char ToIcon(this ChessPieceType type)
         {
             return ToChessPieceIcon((int)type);

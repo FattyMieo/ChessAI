@@ -21,8 +21,12 @@ public class AIManager : MonoBehaviour
     public ChessPlayerType playerType;
 
     [Header("Minimax")]
-    public ChessBoardSnapshot testStartingBoard;
-    public MinimaxTree minimaxTree = new MinimaxTree();
+    public ChessBoardSnapshot[] outcomes;
+    public bool isRunningMinimax = false;
+    public bool hasRunMinimax = false;
+    public int iteration;
+    public ChessBoardSnapshot minimaxResult;
+    public Dictionary<ulong, MinimaxNode> tTable = new Dictionary<ulong, MinimaxNode>();
 
     // Use this for initialization
     void Awake ()
@@ -32,14 +36,8 @@ public class AIManager : MonoBehaviour
         else if (_instance != this)
             Destroy(this.gameObject);
     }
-	
-	// Update is called once per frame
-	void Update ()
-    {
-		
-	}
     
-    public List<ChessBoardSnapshot> FindPossibleMoves(ChessBoardSnapshot boardSnapshot, ChessPlayerType playerType)
+    public ChessBoardSnapshot[] FindPossibleMoves(ChessBoardSnapshot boardSnapshot, ChessPlayerType playerType)
     {
         List<ChessBoardSnapshot> ret = new List<ChessBoardSnapshot>();
         Dictionary<int, ChessPosition> boardDict = boardSnapshot.ToDictionary();
@@ -93,6 +91,27 @@ public class AIManager : MonoBehaviour
                                     break;
                             }
 
+                            // Pawn Promotion
+                            if (position.type.IsPawn())
+                            {
+                                if
+                                (
+                                    position.type == ChessPieceType.WhitePawn &&
+                                    position.coord.y == 0
+                                )
+                                {
+                                    position.type = ChessPieceType.WhiteQueen;
+                                }
+                                else if
+                                (
+                                    position.type == ChessPieceType.BlackPawn &&
+                                    position.coord.y == 7
+                                )
+                                {
+                                    position.type = ChessPieceType.BlackQueen;
+                                }
+                            }
+
                             ret.Add(GameManager.Instance.AdjustBoard
                             (
                                 boardSnapshot,
@@ -114,20 +133,211 @@ public class AIManager : MonoBehaviour
             }
         }
 
-        return ret;
+        return ret.ToArray();
     }
 
+    public void AddTransposition(ulong hash, int score, ulong parentHash)
+    {
+        MinimaxNode newNode = new MinimaxNode(hash, score);
+
+        newNode.parentHash = parentHash;
+        if (tTable.ContainsKey(parentHash))
+        {
+            tTable[parentHash].childrenHash.Add(hash);
+        }
+
+        tTable.Add(hash, newNode);
+    }
+    
+    int AlphaBeta(ChessBoardSnapshot boardPosition, int depth, int alpha, int beta, bool maximizingPlayer, ulong parentHash)
+    {
+        if (depth <= 0 || boardPosition.IsEndGame())
+        {
+            return GameManager.Instance.CalculateScore(boardPosition, playerType);
+        }
+
+        int retValue = maximizingPlayer ? int.MinValue : int.MaxValue;
+        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+
+        for(int i = 0; i < nextBoardPositions.Length; i++)
+        {
+            if (maximizingPlayer)
+            {
+                ulong hash = nextBoardPositions[i].board.ToZobristHash();
+                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, false, hash);
+
+                if (!tTable.ContainsKey(hash))
+                {
+                    AddTransposition(hash, newValue, parentHash);
+                }
+
+                if (newValue > retValue)
+                    retValue = newValue;
+                if (retValue > alpha)
+                    alpha = retValue;
+                if (beta <= alpha)
+                    break;
+            }
+            else
+            {
+                ulong hash = nextBoardPositions[i].board.ToZobristHash();
+                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, true, hash);
+
+                if (!tTable.ContainsKey(hash))
+                {
+                    AddTransposition(hash, newValue, parentHash);
+                }
+
+                if (newValue < retValue)
+                    retValue = newValue;
+                if (retValue < beta)
+                    beta = retValue;
+                if (beta <= alpha)
+                    break;
+            }
+        }
+
+        return retValue;
+    }
+
+    IEnumerator MinimaxAB(ChessBoardSnapshot boardPosition, int depth)
+    {
+        isRunningMinimax = true;
+
+        int highestScore = int.MinValue;
+        int highestScoreIndex = -1;
+
+        ulong parentHash = boardPosition.board.ToZobristHash();
+        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+
+        for (int i = 0; i < nextBoardPositions.Length; i++)
+        {
+            int score = AlphaBeta(nextBoardPositions[i], depth, int.MinValue, int.MaxValue, true, 0);
+            ulong hash = nextBoardPositions[i].board.ToZobristHash();
+
+            if (!tTable.ContainsKey(hash))
+            {
+                AddTransposition(hash, score, parentHash);
+            }
+
+            if (score > highestScore)
+            {
+                highestScore = score;
+                highestScoreIndex = i;
+            }
+
+            iteration = i;
+            minimaxResult = nextBoardPositions[highestScoreIndex];
+            yield return null;
+        }
+
+        isRunningMinimax = false;
+    }
+
+    IEnumerator Minimax(ChessBoardSnapshot boardPosition, int depth)
+    {
+        int highestScore = int.MinValue;
+        int highestScoreIndex = -1;
+
+        //getAllBoardPositions returns a list of next possible board positions, the boolean flag is to tell whether the current move is Max or Min
+        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+
+        for (int i = 0; i < nextBoardPositions.Length; i++)
+        {
+            ChessBoardSnapshot board = nextBoardPositions[i];
+            int score = Min(board, depth);
+            if (score > highestScore)
+            {
+                highestScore = score;
+                highestScoreIndex = i;
+            }
+
+            iteration = i;
+            minimaxResult = nextBoardPositions[highestScoreIndex];
+            yield return null;
+        }
+
+        isRunningMinimax = false;
+    }
+    
+    int Min(ChessBoardSnapshot boardPosition, int depth)
+    {
+        if (depth <= 0 || boardPosition.IsEndGame())
+        {
+            return GameManager.Instance.CalculateScore(boardPosition, playerType);
+        }
+
+        int lowestScore = int.MaxValue;
+
+        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType.ToOpposite());
+        for (int i = 0; i < nextBoardPositions.Length; i++)
+        {
+            ChessBoardSnapshot board = nextBoardPositions[i];
+            int score = Max(board, depth - 1);
+            if (score < lowestScore)
+                lowestScore = score;
+        }
+        return lowestScore;
+    }
+
+    int Max(ChessBoardSnapshot boardPosition, int depth)
+    {
+        if (depth <= 0 || boardPosition.IsEndGame())
+        {
+            return GameManager.Instance.CalculateScore(boardPosition, playerType);
+        }
+
+        int highestScore = int.MinValue;
+
+        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+        for (int i = 0; i < nextBoardPositions.Length; i++)
+        {
+            ChessBoardSnapshot board = nextBoardPositions[i];
+            int score = Min(board, depth - 1);
+            if (score > highestScore)
+                highestScore = score;
+        }
+
+        return highestScore;
+    }
+    
     [ContextMenu("[Test] Generate Possible Moves")]
     public void TestGeneratePossibleMoves()
     {
-        minimaxTree.Add(new MinimaxNode(playerType, FindPossibleMoves(GameManager.Instance.LatestSnapshot, playerType)));
-        Debug.Log("Generated possible moves for " + playerType + " Player (" + minimaxTree[minimaxTree.Count - 1].outcomes.Count + " outcomes)");
+        outcomes = FindPossibleMoves(GameManager.Instance.LatestSnapshot, playerType);
+        Debug.Log("Generated possible moves for " + playerType + " Player (" + outcomes.Length + " outcomes)");
     }
 
-    [ContextMenu("[Test] Generate Possible Moves /w Starting Board")]
-    public void TestGeneratePossibleMovesWithStartingBoard()
+    [ContextMenu("[Test] Generate Minimax")]
+    public void TestGenerateMinimax()
     {
-        minimaxTree.Add(new MinimaxNode(playerType, FindPossibleMoves(testStartingBoard, playerType)));
-        Debug.Log("Generated possible moves for " + playerType + " Player (" + minimaxTree[minimaxTree.Count - 1].outcomes.Count + " outcomes)");
+        StartCoroutine(MinimaxAB(GameManager.Instance.LatestSnapshot, 5));
+        hasRunMinimax = true;
+        isRunningMinimax = true;
+    }
+
+    public void PostGenerateMinimax()
+    {
+        GameManager.Instance.GenNextSnapshot(minimaxResult);
+        GameManager.Instance.LoadFromSnapshot(GameManager.Instance.LatestSnapshot);
+        //playerType = playerType.ToOpposite();
+    }
+
+    void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            TestGenerateMinimax();
+        }
+
+        if(hasRunMinimax)
+        {
+            // If it's not running anymore
+            if(!isRunningMinimax)
+            {
+                PostGenerateMinimax();
+                hasRunMinimax = false;
+            }
+        }
     }
 }
