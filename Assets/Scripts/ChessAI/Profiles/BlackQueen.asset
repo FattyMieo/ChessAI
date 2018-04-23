@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: BlackQueen
   m_EditorClassIdentifier: 
   type: 11
-  score: 0
+  score: 9
   possibleMoves:
   - move:
       x: 1

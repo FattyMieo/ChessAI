@@ -17,14 +17,34 @@ public class AIManager : MonoBehaviour
         }
     }
 
+    [Header("Visuals")]
+    public GameObject gear;
+
     [Header("Settings")]
     public ChessPlayerType playerType;
+    //public int fixedDepthLimit = 5;
+    public float maxTime = 20.0f;
+    public int minDepth = 2;
+    public int maxDepth = 40;
+    public int levelUpEvery = 10;
 
     [Header("Minimax")]
+    public int growth = 0;
     public ChessBoardSnapshot[] outcomes;
+    public bool isRunningItDeep = false;
+    public bool hasRunItDeep = false;
     public bool isRunningMinimax = false;
     public bool hasRunMinimax = false;
-    public int iteration;
+
+    public int iterativeDepth;
+
+    public int lastScore;
+    public int lastIteration;
+    public int totalIterations;
+
+    public int highestScore = int.MinValue;
+    public int highestScoreIndex = -1;
+
     public ChessBoardSnapshot minimaxResult;
     public Dictionary<ulong, MinimaxNode> tTable = new Dictionary<ulong, MinimaxNode>();
 
@@ -36,7 +56,12 @@ public class AIManager : MonoBehaviour
         else if (_instance != this)
             Destroy(this.gameObject);
     }
-    
+
+    void Start()
+    {
+        growth = 0;
+    }
+
     public ChessBoardSnapshot[] FindPossibleMoves(ChessBoardSnapshot boardSnapshot, ChessPlayerType playerType)
     {
         List<ChessBoardSnapshot> ret = new List<ChessBoardSnapshot>();
@@ -69,12 +94,16 @@ public class AIManager : MonoBehaviour
                         // When there are only finite amount of moves, set only when reached destination
                         if (possibleMoves[j].repeatTimes < 0 || k == possibleMoves[j].repeatTimes)
                         {
+                            bool isLastMove = false;
+
                             if (possibleMoves[j].pattern == ChessPieceMovePattern.Normal)
                             {
                                 if (boardDict.ContainsKey(to.ToArrayCoord()))
                                 {
                                     if (boardDict[to.ToArrayCoord()].type.IsSameTeamAs(position.type))
                                         break;
+
+                                    isLastMove = true;
                                 }
                             }
                             else if (possibleMoves[j].pattern == ChessPieceMovePattern.MoveOnly)
@@ -119,6 +148,9 @@ public class AIManager : MonoBehaviour
                                 new ChessPosition(ChessPieceType.None, from, true),
                                 new ChessPosition(position.type, to, true)
                             ));
+
+                            if (isLastMove)
+                                break;
                         }
                         else
                         {
@@ -135,98 +167,148 @@ public class AIManager : MonoBehaviour
 
         return ret.ToArray();
     }
-
-    public void AddTransposition(ulong hash, int score, ulong parentHash)
+    
+    int AlphaBeta(ChessBoardSnapshot boardPosition, int depth, int alpha, int beta, bool maximizingPlayer)
     {
-        MinimaxNode newNode = new MinimaxNode(hash, score);
+        int origAlpha = alpha;
+        int origBeta = beta;
+        MinimaxNode node = new MinimaxNode();
 
-        newNode.parentHash = parentHash;
-        if (tTable.ContainsKey(parentHash))
+        // Transposition Table Lookup; node is the lookup key for ttEntry
+        ulong hash = boardPosition.board.ToZobristHash();
+        if (tTable.ContainsKey(hash))
         {
-            tTable[parentHash].childrenHash.Add(hash);
+            node = tTable[hash];
+
+            if(node.depth >= depth)
+            {
+                switch(node.flag)
+                {
+                    case MinimaxNodeFlag.Exact:
+                        return node.eval;
+                    case MinimaxNodeFlag.LowerBound:
+                        if (node.eval > alpha)
+                            alpha = node.eval;
+                        break;
+                    case MinimaxNodeFlag.UpperBound:
+                        if (node.eval < beta)
+                            beta = node.eval;
+                        break;
+                }
+
+                if (beta <= alpha)
+                    return node.eval;
+            }
         }
 
-        tTable.Add(hash, newNode);
-    }
-    
-    int AlphaBeta(ChessBoardSnapshot boardPosition, int depth, int alpha, int beta, bool maximizingPlayer, ulong parentHash)
-    {
+        // Minimax + Alpha Beta Pruning
         if (depth <= 0 || boardPosition.IsEndGame())
         {
             return GameManager.Instance.CalculateScore(boardPosition, playerType);
         }
+        
+        int val = 0;
 
-        int retValue = maximizingPlayer ? int.MinValue : int.MaxValue;
-        ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
-
-        for(int i = 0; i < nextBoardPositions.Length; i++)
+        if (maximizingPlayer)
         {
-            if (maximizingPlayer)
+            val = int.MinValue;
+            ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+
+            for (int i = 0; i < nextBoardPositions.Length; i++)
             {
-                ulong hash = nextBoardPositions[i].board.ToZobristHash();
-                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, false, hash);
+                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, false);
 
-                if (!tTable.ContainsKey(hash))
-                {
-                    AddTransposition(hash, newValue, parentHash);
-                }
-
-                if (newValue > retValue)
-                    retValue = newValue;
-                if (retValue > alpha)
-                    alpha = retValue;
-                if (beta <= alpha)
-                    break;
-            }
-            else
-            {
-                ulong hash = nextBoardPositions[i].board.ToZobristHash();
-                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, true, hash);
-
-                if (!tTable.ContainsKey(hash))
-                {
-                    AddTransposition(hash, newValue, parentHash);
-                }
-
-                if (newValue < retValue)
-                    retValue = newValue;
-                if (retValue < beta)
-                    beta = retValue;
+                if (newValue > val)
+                    val = newValue;
+                if (val > alpha)
+                    alpha = val;
                 if (beta <= alpha)
                     break;
             }
         }
+        else
+        {
+            val = int.MaxValue;
+            ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType.ToOpposite());
 
-        return retValue;
+            for (int i = 0; i < nextBoardPositions.Length; i++)
+            {
+                int newValue = AlphaBeta(nextBoardPositions[i], depth - 1, alpha, beta, true);
+
+                if (newValue < val)
+                    val = newValue;
+                if (val < beta)
+                    beta = val;
+                if (beta <= alpha)
+                    break;
+            }
+        }
+        
+        // Transposition Table Store; node is the lookup key for ttEntry
+        node.hash = hash;
+        node.eval = val;
+
+        if(val <= origAlpha)
+            node.flag = MinimaxNodeFlag.UpperBound;
+        else if(val >= origBeta)
+            node.flag = MinimaxNodeFlag.LowerBound;
+        else
+            node.flag = MinimaxNodeFlag.Exact;
+
+        node.depth = depth;
+
+        if(tTable.ContainsKey(hash))
+            tTable[hash] = node;
+        else
+            tTable.Add(hash, node);
+
+        return val;
+    }
+
+    IEnumerator IterativeDeepeningSearch(ChessBoardSnapshot boardPosition)
+    {
+        isRunningItDeep = true;
+
+        float startTime = Time.unscaledTime;
+        bool isOutTime = false;
+
+        for (int depth = 1; (depth <= minDepth || depth <= maxDepth && !isOutTime); depth++)
+        {
+            StartCoroutine(MinimaxAB(boardPosition, depth));
+            hasRunMinimax = true;
+            isRunningMinimax = true;
+            iterativeDepth = depth;
+            yield return new WaitUntil(() => isRunningMinimax == false);
+            hasRunMinimax = false;
+            isOutTime = Time.unscaledTime - startTime >= maxTime;
+        }
+
+        isRunningItDeep = false;
     }
 
     IEnumerator MinimaxAB(ChessBoardSnapshot boardPosition, int depth)
     {
         isRunningMinimax = true;
 
-        int highestScore = int.MinValue;
-        int highestScoreIndex = -1;
-
-        ulong parentHash = boardPosition.board.ToZobristHash();
+        //int highestScore = int.MinValue;
+        //int highestScoreIndex = -1;
+        highestScore = int.MinValue;
+        highestScoreIndex = -1;
+        
         ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+        totalIterations = nextBoardPositions.Length;
 
         for (int i = 0; i < nextBoardPositions.Length; i++)
         {
-            int score = AlphaBeta(nextBoardPositions[i], depth, int.MinValue, int.MaxValue, true, 0);
-            ulong hash = nextBoardPositions[i].board.ToZobristHash();
-
-            if (!tTable.ContainsKey(hash))
-            {
-                AddTransposition(hash, score, parentHash);
-            }
-
+            int score = AlphaBeta(nextBoardPositions[i], depth, int.MinValue, int.MaxValue, false);
             if (score > highestScore)
             {
                 highestScore = score;
                 highestScoreIndex = i;
             }
 
-            iteration = i;
+            lastScore = score;
+            lastIteration = i;
             minimaxResult = nextBoardPositions[highestScoreIndex];
             yield return null;
         }
@@ -236,11 +318,16 @@ public class AIManager : MonoBehaviour
 
     IEnumerator Minimax(ChessBoardSnapshot boardPosition, int depth)
     {
-        int highestScore = int.MinValue;
-        int highestScoreIndex = -1;
+        isRunningMinimax = true;
+
+        //int highestScore = int.MinValue;
+        //int highestScoreIndex = -1;
+        highestScore = int.MinValue;
+        highestScoreIndex = -1;
 
         //getAllBoardPositions returns a list of next possible board positions, the boolean flag is to tell whether the current move is Max or Min
         ChessBoardSnapshot[] nextBoardPositions = FindPossibleMoves(boardPosition, playerType);
+        totalIterations = nextBoardPositions.Length;
 
         for (int i = 0; i < nextBoardPositions.Length; i++)
         {
@@ -252,7 +339,8 @@ public class AIManager : MonoBehaviour
                 highestScoreIndex = i;
             }
 
-            iteration = i;
+            lastScore = score;
+            lastIteration = i;
             minimaxResult = nextBoardPositions[highestScoreIndex];
             yield return null;
         }
@@ -301,19 +389,23 @@ public class AIManager : MonoBehaviour
         return highestScore;
     }
     
-    [ContextMenu("[Test] Generate Possible Moves")]
-    public void TestGeneratePossibleMoves()
+    [ContextMenu("[Debug] Generate Possible Moves")]
+    public void GeneratePossibleMoves()
     {
         outcomes = FindPossibleMoves(GameManager.Instance.LatestSnapshot, playerType);
         Debug.Log("Generated possible moves for " + playerType + " Player (" + outcomes.Length + " outcomes)");
     }
 
-    [ContextMenu("[Test] Generate Minimax")]
-    public void TestGenerateMinimax()
+    [ContextMenu("[Debug] Make Move now")]
+    public void MakeMove()
     {
-        StartCoroutine(MinimaxAB(GameManager.Instance.LatestSnapshot, 5));
-        hasRunMinimax = true;
-        isRunningMinimax = true;
+        growth++;
+        if (growth % levelUpEvery == 0)
+            minDepth++;
+
+        StartCoroutine(IterativeDeepeningSearch(GameManager.Instance.LatestSnapshot));
+        hasRunItDeep = true;
+        isRunningItDeep = true;
     }
 
     public void PostGenerateMinimax()
@@ -327,17 +419,22 @@ public class AIManager : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            TestGenerateMinimax();
+            GeneratePossibleMoves();
         }
 
-        if(hasRunMinimax)
+        if(hasRunItDeep)
         {
             // If it's not running anymore
-            if(!isRunningMinimax)
+            if(!isRunningItDeep)
             {
                 PostGenerateMinimax();
-                hasRunMinimax = false;
+                hasRunItDeep = false;
             }
         }
+    }
+
+    private void OnGUI()
+    {
+        gear.SetActive(isRunningItDeep);
     }
 }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: BlackRook
   m_EditorClassIdentifier: 
   type: 10
-  score: 0
+  score: 5
   possibleMoves:
   - move:
       x: 1

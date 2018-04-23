@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: BlackKing
   m_EditorClassIdentifier: 
   type: 12
-  score: 0
+  score: 999
   possibleMoves:
   - move:
       x: -1

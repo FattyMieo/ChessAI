@@ -183,7 +183,7 @@ public class GameManager : MonoBehaviour
         if(Move(from, to, out resultPositions))
         {
             GenNextSnapshot(resultPositions);
-            AIManager.Instance.TestGenerateMinimax();
+            AIManager.Instance.MakeMove();
             return true;
         }
 
@@ -453,9 +453,6 @@ public class GameManager : MonoBehaviour
     {
         int ret = 0;
         ChessPieceType[] board = boardSnapshot.board;
-        ulong hash = board.ToZobristHash();
-        if (AIManager.Instance.tTable.ContainsKey(hash))
-            return AIManager.Instance.tTable[hash].score;
 
         for (int i = 0; i < board.Length; i++)
         {
@@ -464,10 +461,14 @@ public class GameManager : MonoBehaviour
             if (board[i].IsEmpty())
                 continue;
 
-            if(board[i].IsSameTeamAs(playerType))
-                ret += profilesDict[board[i]].score;
+            if (board[i].IsSameTeamAs(playerType))
+            {
+                ret += profilesDict[board[i]].score + 1;
+            }
             else if (board[i].IsDifferentTeamAs(playerType))
-                ret -= profilesDict[board[i]].score;
+            {
+                ret -= profilesDict[board[i]].score + 1;
+            }
         }
 
         return ret;

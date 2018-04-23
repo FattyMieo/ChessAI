@@ -12,45 +12,53 @@ MonoBehaviour:
   m_Name: WhiteKnight
   m_EditorClassIdentifier: 
   type: 2
-  score: 0
+  score: 3
   possibleMoves:
   - move:
       x: -2
       y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 2
       y: -1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: -2
       y: 1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 2
       y: 1
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: -1
       y: -2
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: -1
       y: 2
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 1
       y: -2
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0
   - move:
       x: 1
       y: 2
-    isRepeatable: 0
-    isSpecialMove: 0
+    repeatTimes: 1
+    pattern: 0
+    specialRule: 0

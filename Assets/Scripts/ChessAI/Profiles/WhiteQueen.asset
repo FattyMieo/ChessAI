@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: WhiteQueen
   m_EditorClassIdentifier: 
   type: 5
-  score: 0
+  score: 9
   possibleMoves:
   - move:
       x: 1

@@ -52,6 +52,9 @@ public class MoveTester : MonoBehaviour
 				lastSquare.SetVisibility(true);
 			}
 
+            if(AIManager.Instance.isRunningMinimax)
+                return;
+
 			if(Input.GetMouseButtonUp(0))
 			{
 				if(hit.collider.gameObject.CompareTag("SquareCollider"))

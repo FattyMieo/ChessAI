@@ -78,7 +78,13 @@ public class ChessPieceScript : MonoBehaviour
 			return;
         }
 
-        meshGO = Instantiate(GameManager.Instance.pieceMeshes[meshType], this.transform);
+        meshGO = Instantiate
+        (
+            GameManager.Instance.pieceMeshes[meshType],
+            Vector3.zero,
+            Quaternion.Euler(0.0f, 180.0f * colorType, 0.0f), // Rotate the mesh if it's black
+            this.transform
+        );
         MaterialPainter meshMatPainter = meshGO.GetComponent<MaterialPainter>();
 		meshMatPainter.mat = GameManager.Instance.pieceMat[colorType];
 		meshMatPainter.GetComponent<MaterialPainter>().UpdateMaterial();

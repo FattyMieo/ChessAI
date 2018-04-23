@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: WhiteRook
   m_EditorClassIdentifier: 
   type: 4
-  score: 0
+  score: 5
   possibleMoves:
   - move:
       x: 1
