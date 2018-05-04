@@ -1,5 +1,5 @@
 # Chess AI /w Minimax Algorithm
-Chess AI created using Minimax Algorithm, a recursive algorithm for choosing the next move in a multiplayer game.
+**Chess AI** created using **[Minimax Algorithm](https://en.wikipedia.org/wiki/Minimax)**, a recursive algorithm for choosing the next move in a multiplayer game.
 
 > Software used: **Unity**
 
